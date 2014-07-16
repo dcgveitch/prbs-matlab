@@ -46,7 +46,7 @@ for d_batch=1:d_nBatch
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
     
-    parfor ref_bPerm = 1:d_batchSize
+    for ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -257,12 +257,12 @@ for d_batch=1:d_nBatch
             
             for d_seqA=clc_nSeqAverage
                 %%%
-                clc_simFlowTime{d_seqA}=[((d_seqA+1)*clc_seqPeriod)/2:clc_seqPeriod:(((d_seqA+1)*clc_seqPeriod)/2)+(d_seqVlim-1)*clc_seqPeriod]';
                 if (clc_afType=='S' || clc_afType=='F')
                     d_seqVlim=clc_nRunSeq-d_seqA;
                 else
                     d_seqVlim=max(clc_nSeqAverage);
                 end
+                clc_simFlowTime{d_seqA}=[((d_seqA+1)*clc_seqPeriod)/2:clc_seqPeriod:(((d_seqA+1)*clc_seqPeriod)/2)+(d_seqVlim-1)*clc_seqPeriod]';
                 for d_seqV=1:d_seqVlim
                     %%%
                     clc_simFlow{d_seqA}(d_seqV,:)=mean(sim_prbsFlow(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+d_seqA)*clc_cSeqLength,:));
@@ -279,43 +279,47 @@ for d_batch=1:d_nBatch
                         d_seqVlim=max(clc_nSeqAverage);
                     end
                     clc_crossCorr=[];
+                    % Calculate cross correlations and flows for all sequence positions required
+                    % ?
+                    d_seqA=1;
                     for d_seqV=1:d_seqVlim
                         %%%
-                        for d_relZone=1:clc_nZones
-                            for d_concZone=1:clc_nZones
-                                clc_crossCorrOutput = sim_conc{d_conc}(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+1)*clc_cSeqLength,d_concZone,d_noise)/1000000;
-                                clc_concMean = mean(clc_crossCorrOutput);
-                                clc_gain = clc_concMean/(clc_releaseRateT(d_relZone)/2);
-                                clc_crossCorrOutput = clc_crossCorrOutput-clc_concMean;
-                                clc_crossCorrOutputMat=clc_crossCorrOutput';                  
-                                d_crossCorr=clc_crossCorrOutputMat*clc_crossCorrInputMat{d_relZone};
-                                clc_crossCorr{1,d_seqV}(:,d_relZone,d_concZone)=((clc_seqLength*d_crossCorr)+(clc_a2(d_relZone)*clc_gain))/((clc_seqLength+1)*clc_dth*clc_seqMultiple*clc_a2(d_relZone));
+                        if (ismember(1,d_reqImp) || ismember(2,d_reqImp))
+                            for d_relZone=1:clc_nZones
+                                for d_concZone=1:clc_nZones
+                                    clc_crossCorrOutput = sim_conc{d_conc}(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+1)*clc_cSeqLength,d_concZone,d_noise)/1000000;
+                                    clc_concMean = mean(clc_crossCorrOutput);
+                                    clc_gain = clc_concMean/(clc_releaseRateT(d_relZone)/2);
+                                    clc_crossCorrOutput = clc_crossCorrOutput-clc_concMean;
+                                    clc_crossCorrOutputMat=clc_crossCorrOutput';                  
+                                    d_crossCorr=clc_crossCorrOutputMat*clc_crossCorrInputMat{d_relZone};
+                                    clc_crossCorr{1}(:,d_relZone,d_concZone,d_seqV)=((clc_seqLength*d_crossCorr)+(clc_a2(d_relZone)*clc_gain))/((clc_seqLength+1)*clc_dth*clc_seqMultiple*clc_a2(d_relZone));
+                                end
                             end
                         end
 
-                        % Average cross correlations
                         if (ismember(2,d_reqImp))
                             for d_relZone=1:clc_nZones
                                 for d_concZone=1:clc_nZones
                                     d_offset=circshift(clc_nZones:-1:1,[0 d_relZone]);
-                                    clc_crossCorr{2,d_seqV}(:,d_relZone,d_concZone)=zeros(clc_dSeqLength,1);
+                                    clc_crossCorr{2}(:,d_relZone,d_concZone,d_seqV)=zeros(clc_dSeqLength,1);
                                     for d_i=1:clc_nZones
-                                        clc_crossCorr{2,d_seqV}(:,d_relZone,d_concZone)=clc_crossCorr{2,d_seqV}(:,d_relZone,d_concZone)+clc_crossCorr{1,d_seqV}(clc_seqPosAi(d_offset(d_i),d_i):clc_seqPosAi(d_offset(d_i),d_i)+clc_dSeqLength-1,d_offset(d_i),d_concZone);
+                                        clc_crossCorr{2}(:,d_relZone,d_concZone,d_seqV)=clc_crossCorr{2}(:,d_relZone,d_concZone,d_seqV)+clc_crossCorr{1}(clc_seqPosAi(d_offset(d_i),d_i):clc_seqPosAi(d_offset(d_i),d_i)+clc_dSeqLength-1,d_offset(d_i),d_concZone,d_seqV);
                                     end
-                                    clc_crossCorr{2,d_seqV}(:,d_relZone,d_concZone)=clc_crossCorr{2}(:,d_relZone,d_concZone)./clc_nZones;
+                                    clc_crossCorr{2}(:,d_relZone,d_concZone,d_seqV)=clc_crossCorr{2}(:,d_relZone,d_concZone,d_seqV)./clc_nZones;
                                 end
                             end
                         end
 
                         % Direct impulses
                         if (ismember(3,d_reqImp) && (d_seqV<2))
-                            clc_crossCorr{3,1}=clc_crossCorrD{3,d_conc}(:,:,:,d_noise);
+                            clc_crossCorr{3}=clc_crossCorrD{3,d_conc}(:,:,:,d_noise);
                         end
-                    end
-                    
-
+                        
                         for d_imp=d_reqImp
-                            %%%
+                            if (d_imp==3 && d_seqV>1)
+                                continue;
+                            end
                             cll_crossCorrSum=[];
                             cll_D=[];
                             cll_E=[];
@@ -326,11 +330,11 @@ for d_batch=1:d_nBatch
 
                             % Calculate flowrates
                             if (d_imp==3)
-                                cll_crossCorrCalc=clc_crossCorr{d_imp}(1:clc_cSeqLength,:,:);
+                                cll_crossCorrCalc=clc_crossCorr{d_imp}(1:clc_cSeqLength,:,:,d_seqV);
                                 cll_sumStart = 1;
                                 cll_sumEnd = size(cll_crossCorrCalc,1);
                             else
-                                cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:);
+                                cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                                 cll_sumStart = clc_seqMultiple+1;
                                 cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
                             end
@@ -356,15 +360,76 @@ for d_batch=1:d_nBatch
                             end
 
                             for d_i=1:clc_nZones
-                                clc_flow{1}{d_imp,d_conc}{d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones,d_noise)=cll_Xflow(d_i,:);    
+                                clc_flow{1}{d_imp,d_conc}{1,d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones,d_noise)=cll_Xflow(d_i,:);    
+                            end
+                        end
+                    end
+                        
+                    for d_seqA=clc_nSeqAverage(2:end)
+                        %%%
+                        if (clc_afType=='S' || clc_afType=='F')
+                            d_seqVlim=clc_nRunSeq-d_seqA;
+                        else
+                            d_seqVlim=1;
+                        end
+                        for d_seqV=1:d_seqVlim
+                            %%%
+                            d_reqImpA=d_reqImp;
+                            d_reqImpA(d_reqImpA==3)=[];
+                            for d_imp=d_reqImpA
+                                %%%
+                                % Calculate averaged flows through combining results
+                                clc_flow{1}{d_imp,d_conc}{1,d_seqA}(d_seqV,:,d_noise)=sum(clc_flow{1}{d_imp,d_conc}{1,1}(d_seqV:2:d_seqV+d_seqA-1,:,d_noise),1);
+                                
+                                % Calculate averaged flows through combining inputs
+                                clc_crossCorrA=[];
+                                for d_relZone=1:clc_nZones
+                                    for d_concZone=1:clc_nZones
+                                        clc_crossCorrA(:,d_relZone,d_concZone)=mean(clc_crossCorr{d_imp}(:,d_relZone,d_concZone,d_seqV:d_seqV+d_seqA-1),4);
+                                    end
+                                end
+                                
+                                cll_crossCorrSum=[];
+                                cll_D=[];
+                                cll_E=[];
+                                cll_X=[];
+                                cll_Xach=[];
+                                cll_Xflow=[];
+                                cll_dt=clc_dth;
+
+                                % Calculate flowrates
+                                cll_crossCorrCalc=clc_crossCorrA(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:);
+                                cll_sumStart = clc_seqMultiple+1;
+                                cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                                cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
+
+                                for d_relZone=1:clc_nZones
+                                    for d_concZone=1:clc_nZones
+                                        cll_crossCorrSum(:,d_relZone,d_concZone,1)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)-cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
+                                        cll_crossCorrSum(:,d_relZone,d_concZone,2)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)+cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
+                                    end
+                                end
+
+                                for d_zone=1:clc_nZones
+                                    for d_i=1:clc_nZones
+                                        for d_j=1:clc_nZones
+                                            cll_D(d_i,d_j,d_zone)=sum(cll_crossCorrSum(:,d_i,d_j,2).*cll_crossCorrSum(:,d_i,d_zone,2));
+                                        end
+                                        cll_E(d_i,d_zone)=sum(cll_crossCorrSum(:,d_i,d_zone,1).*cll_crossCorrSum(:,d_i,d_zone,2));
+                                    end
+                                    cll_X(:,d_zone)=cll_D(:,:,d_zone)\cll_E(:,d_zone);
+                                    cll_Xach(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt;
+                                    cll_Xflow(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt*clc_zoneVol(d_zone);
+                                end
+
+                                for d_i=1:clc_nZones
+                                    clc_flow{1}{d_imp,d_conc}{2,d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones,d_noise)=cll_Xflow(d_i,:);    
+                                end
                             end
                         end
                     end
                 end
             end
-                end
-            end
-
             outB_simFlowTime{ref_bPerm}=clc_simFlowTime;
             outB_simFlow{ref_bPerm}=clc_simFlow;
         end
