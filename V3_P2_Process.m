@@ -46,7 +46,7 @@ for d_batch=1:d_nBatch
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
     
-    for ref_bPerm = 1:d_batchSize
+    parfor ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -83,11 +83,8 @@ for d_batch=1:d_nBatch
         sim_prbsFlow=cell2mat(mat_outP1.out_prbsFlow(1,d_batchL+ref_bPerm-1));
         
         clc_flow=[];
-        clc_impulse=[];
-        clc_impulseFull=[];
         clc_crossCorr=[];
         clc_crossCorrD=[];
-        rB_impulseGen=0;
         
         if (ismember(1,d_solve))
             % Form full set of concentration traces from theoretical            
@@ -248,7 +245,6 @@ for d_batch=1:d_nBatch
             clc_crossCorrInputMat=[];
             cll_crossCorrSum=[];
             cll_crossCorrCalc=[];
-            
             cll_dt=[];
             
             for d_relZone=1:clc_nZones
@@ -260,7 +256,7 @@ for d_batch=1:d_nBatch
                 if (clc_afType=='S' || clc_afType=='F')
                     d_seqVlim=clc_nRunSeq-d_seqA;
                 else
-                    d_seqVlim=max(clc_nSeqAverage);
+                    d_seqVlim=1;
                 end
                 clc_simFlowTime{d_seqA}=[((d_seqA+1)*clc_seqPeriod)/2:clc_seqPeriod:(((d_seqA+1)*clc_seqPeriod)/2)+(d_seqVlim-1)*clc_seqPeriod]';
                 for d_seqV=1:d_seqVlim
@@ -280,7 +276,6 @@ for d_batch=1:d_nBatch
                     end
                     clc_crossCorr=[];
                     % Calculate cross correlations and flows for all sequence positions required
-                    % ?
                     d_seqA=1;
                     for d_seqV=1:d_seqVlim
                         %%%
@@ -433,7 +428,6 @@ for d_batch=1:d_nBatch
             outB_simFlowTime{ref_bPerm}=clc_simFlowTime;
             outB_simFlow{ref_bPerm}=clc_simFlow;
         end
-            
         outB_flow{ref_bPerm}=clc_flow;
     end
     
