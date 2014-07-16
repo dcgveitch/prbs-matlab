@@ -16,7 +16,7 @@ mkdir(strcat('Runs/', setup_timeStamp, '/Results'));
 addpath(genpath(strcat('Runs/', setup_timeStamp)), '-begin');
 cd(strcat('Runs/', setup_timeStamp));
 cd Results;
-mat_outBig=matfile(strcat(setup_timeStamp, '__outBig.mat'));
+mat_outP1=matfile(strcat(setup_timeStamp, '__outP1.mat'));
 
 % Read in sheets
 [in_numSetup,in_txtSetup,in_inputSetup] = xlsread(setup_excelInput, 'Setup');
@@ -827,9 +827,9 @@ for d_batch=1:d_nBatch
             disp(['PFT Sim ' datestr(now)]);
             [sim_pftT,sim_pftX,sim_pftConc,sim_pftTracer,sim_pftFlow,sim_pftSensConc]=sim('PRBS_Para',clc_nDays*24);
 
-            out_pftConc{ref_perm}=sim_pftConc(:,1:clc_tZones);
-            out_pftTracer{ref_perm}=sim_pftTracer(:,1:clc_tZones);
-            out_pftFlow{ref_perm}=sim_pftFlow(:,1:clc_tZones^2);
+            outB_pftConc{ref_perm}=sim_pftConc(:,1:clc_tZones);
+            outB_pftTracer{ref_perm}=sim_pftTracer(1,1:clc_tZones);
+            outB_pftFlow{ref_perm}=sim_pftFlow(:,1:clc_tZones^2);
 
             % Clear large variables
             sim_pftT=[];
@@ -839,7 +839,7 @@ for d_batch=1:d_nBatch
             sim_pftFlow=[];
             sim_pftSensConc=[];
         else
-            %% Impulse simulation *OPTIONAL FOR DIAGNOSTIC PURPOSES*
+            %% Direct impulse simulation for noise comparison
             sim_impT=[];
             sim_impX=[];
             sim_impResp=[];
@@ -860,13 +860,19 @@ for d_batch=1:d_nBatch
     
             outB_impulseSim{ref_perm}=clc_impulse;
         end
-
     end
-    mat_outBig.out_input(1,d_batchL:d_batchH)=outB_input(1,d_batchL:d_batchH);
-    mat_outBig.out_prbsConc(1,d_batchL:d_batchH)=outB_prbsConc(1,d_batchL:d_batchH);
-    mat_outBig.out_prbsFlow(1,d_batchL:d_batchH)=outB_prbsFlow(1,d_batchL:d_batchH);
-    mat_outBig.out_prbsTracer(1,d_batchL:d_batchH)=outB_prbsTracer(1,d_batchL:d_batchH);
-    mat_outBig.out_impulseSim(1,d_batchL:d_batchH)=outB_impulseSim(1,d_batchL:d_batchH);
+    mat_outP1.out_input(1,d_batchL:d_batchH)=outB_input(1,d_batchL:d_batchH);
+    mat_outP1.out_prbsConc(1,d_batchL:d_batchH)=outB_prbsConc(1,d_batchL:d_batchH);
+    mat_outP1.out_prbsTracer(1,d_batchL:d_batchH)=outB_prbsTracer(1,d_batchL:d_batchH);
+    mat_outP1.out_prbsFlow(1,d_batchL:d_batchH)=outB_prbsFlow(1,d_batchL:d_batchH);
+    
+    if (clc_afType(1)=='S' | clc_afType(1)=='F') 
+        mat_outP1.out_pftConc(1,d_batchL:d_batchH)=outB_pftConc(1,d_batchL:d_batchH);
+        mat_outP1.out_pftTracer(1,d_batchL:d_batchH)=outB_pftTracer(1,d_batchL:d_batchH);
+        mat_outP1.out_pftFlow(1,d_batchL:d_batchH)=outB_pftFlow(1,d_batchL:d_batchH);
+    else
+        mat_outP1.out_impulseSim(1,d_batchL:d_batchH)=outB_impulseSim(1,d_batchL:d_batchH);
+    end
     clear outB_*;
 end
 
