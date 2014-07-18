@@ -13,7 +13,7 @@ mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
 d_reqSolve=[1 2 3];
-d_reqImp=[1 2 3];
+d_reqImp=[1 2];
 d_reqConc=[1 2];
 
 d_nBatch=ceil(setup_nSim/setup_batchSize);
