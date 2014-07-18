@@ -404,7 +404,7 @@ for d_batch=1:d_nBatch
                                 for d_i=1:clc_nZones
                                     d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
                                 end
-                                clc_flow{3}{d_imp,d_conc}{d_seqA}(d_seqV,:,d_noise)=d_flowSort;
+                                clc_flow{3}{d_imp,d_conc}{1,d_seqA}(d_seqV,:,d_noise)=d_flowSort;
                             end
                         end
                     end
@@ -497,7 +497,7 @@ for d_batch=1:d_nBatch
                                         d_flow(d_zone)=-d_flow(d_zone);
                                         d_flowSort(d_zone,:)=d_flow;
                                     end
-                                    clc_flow{2}{d_imp,d_conc}{1,d_seqA}(d_seqV,:,d_noise)=reshape(d_flowSort,clc_nZones^2,1);
+                                    clc_flow{2}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=reshape(d_flowSort,clc_nZones^2,1);
                                 end
 
                                 if (ismember(3,d_reqSolve))
@@ -513,7 +513,7 @@ for d_batch=1:d_nBatch
                                     for d_i=1:clc_nZones
                                         d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
                                     end
-                                    clc_flow{3}{d_imp,d_conc}{d_seqA}(d_seqV,:,d_noise)=d_flowSort;
+                                    clc_flow{3}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=d_flowSort;
                                 end
                             end
                         end
