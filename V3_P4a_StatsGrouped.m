@@ -1,7 +1,10 @@
 % Process Simulink results
 
-% Read test description
+%% Read test description
 clear;
+%#ok<*FNDSB>
+tic
+
 [d_upperPath, d_folderTS, ~] = fileparts(pwd);
 
 cd Results;
@@ -12,9 +15,9 @@ outB_prbsConcDisc=mat_prbsConc.out_prbsConcDisc;
 
 clear out_aFlowError*;
     
-d_nSolve=[1];
-d_impulseType=[1];
-d_concType=[3];
+d_reqSolve=[1];
+d_reqImp=[1];
+d_reqConc=[3];
 
 d_grouped=1;
 
@@ -56,9 +59,9 @@ if (d_grouped==1)
                 end                
                 for d_perm=1:size(d_summary,1)
                     disp(['Processing Test ' num2str(d_perm) '/' num2str(size(d_summary,1))]);
-                    for d_solve=d_nSolve
-                        for d_conc=d_concType
-                            for d_impulse=d_impulseType
+                    for d_solve=d_reqSolve
+                        for d_conc=d_reqConc
+                            for d_impulse=d_reqImp
                                 d_seqAList=1:length(r_nSeqAverage{d_summary{d_perm,1}});
                                 for d_seqA=d_seqAList
                                     for d_flowType=1:3 % Separate on each output line

@@ -8,7 +8,7 @@ tic
 [d_upperPath, d_folderTS, ~] = fileparts(pwd);
 
 cd Results;
-load(strcat(d_folderTS(1:11), '_setup.mat'));
+load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
