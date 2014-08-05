@@ -22,9 +22,9 @@ else
     d_pft=0;
 end  
 
-d_reqSolve=[1 2 3];
-d_reqImp=[1 2];
-d_reqConc=[1 2];
+d_reqSolve=[1];
+d_reqImp=[1 2 3];
+d_reqConc=[1 2 3 4];
 
 d_nBatch=ceil(setup_nSim/setup_batchSize);
 setup_batchTrim=setup_batchSize;
@@ -55,6 +55,9 @@ for d_batch=1:d_nBatch
     if (d_pft==1)
         rB_pftConc=mat_outP1.out_pftConc(1,d_batchL:d_batchH);
         rB_pftTracer=mat_outP1.out_pftTracer(1,d_batchL:d_batchH);
+    else
+        rB_pftConc=[];
+        rB_pftTracer=[];
     end
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
@@ -329,30 +332,30 @@ for d_batch=1:d_nBatch
             end
         end
 
-        clc_pftFlow=[];
-        %% Calculate PFT flowrate and potential bias
-        if ((clc_afType=='S' || clc_afType=='F'))
-            clc_pftConc=rB_pftConc{ref_bPerm};
-            clc_pftTracer=rB_pftTracer{ref_bPerm};
-            clc_pftFlow(1)=-mean(sum(clc_prbsFlow(1:end,:),2));
-            clc_pftFlow(2)=sum(mean(clc_pftConc(round(setup_nDaysStab*24/clc_stepSize):end,:),1).*clc_zoneVol(1:clc_nZones))/sum(clc_zoneVol(1:clc_nZones));
-            clc_pftFlow(3)=sum(clc_pftTracer(1,:));
-            clc_pftFlow(4)=clc_pftFlow(3)/(clc_pftFlow(2)/1000000);
-            clc_pftFlow(5)=clc_pftFlow(4)/clc_pftFlow(1);
-            outB_aPftResults{ref_bPerm}=clc_pftFlow;
-        end
+%         clc_pftFlow=[];
+%         %% Calculate PFT flowrate and potential bias
+%         if ((clc_afType=='S' || clc_afType=='F'))
+%             clc_pftConc=rB_pftConc{ref_bPerm};
+%             clc_pftTracer=rB_pftTracer{ref_bPerm};
+%             clc_pftFlow(1)=-mean(sum(clc_prbsFlow(1:end,:),2));
+%             clc_pftFlow(2)=sum(mean(clc_pftConc(round(setup_nDaysStab*24/clc_stepSize):end,:),1).*clc_zoneVol(1:clc_nZones))/sum(clc_zoneVol(1:clc_nZones));
+%             clc_pftFlow(3)=sum(clc_pftTracer(1,:));
+%             clc_pftFlow(4)=clc_pftFlow(3)/(clc_pftFlow(2)/1000000);
+%             clc_pftFlow(5)=clc_pftFlow(4)/clc_pftFlow(1);
+%             outB_aPftResults{ref_bPerm}=clc_pftFlow;
+%         end
 
         outB_aFlowResults{ref_bPerm}=clc_flowResults;
-        if (clc_afType=='S' || clc_afType=='F')
-            outB_aFlowFullRef{ref_bPerm}=clc_flowFullRef;
-        end
+%         if (clc_afType=='S' || clc_afType=='F')
+%             outB_aFlowFullRef{ref_bPerm}=clc_flowFullRef;
+%         end
     end
 
     mat_outP3.out_aFlowResults(1,d_batchL:d_batchH)=outB_aFlowResults;
-    if (d_pft==1)
-        mat_outP3.out_aFlowFullRef(1,d_batchL:d_batchH)=outB_aFlowFullRef;
-        mat_outP3.out_aPftResults(1,d_batchL:d_batchH)=outB_aPftResults;
-    end
+%     if (d_pft==1)
+%         mat_outP3.out_aFlowFullRef(1,d_batchL:d_batchH)=outB_aFlowFullRef;
+%         mat_outP3.out_aPftResults(1,d_batchL:d_batchH)=outB_aPftResults;
+%     end
     
     clear outB_* rB_*;
 end

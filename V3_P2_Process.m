@@ -12,9 +12,9 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
-d_reqSolve=[1 2 3];
-d_reqImp=[1 2];
-d_reqConc=[1 2];
+d_reqSolve=[1];
+d_reqImp=[1];
+d_reqConc=[1];
 
 d_nBatch=ceil(setup_nSim/setup_batchSize);
 setup_batchTrim=setup_batchSize;
@@ -293,6 +293,7 @@ for d_batch=1:d_nBatch
                             end
                         end
                     end
+                    outB_impulse{ref_bPerm}=clc_crossCorr{1};
 
                     if (ismember(2,d_reqImp))
                         for d_relZone=1:clc_nZones
@@ -529,6 +530,7 @@ for d_batch=1:d_nBatch
     mat_outP2.out_simFlowTime(1,d_batchL:d_batchH)=outB_simFlowTime;
     mat_outP2.out_simFlow(1,d_batchL:d_batchH)=outB_simFlow;    
     mat_outP2.out_flow(1,d_batchL:d_batchH)=outB_flow;
+    mat_outP2.out_impulse(1,d_batchL:d_batchH)=outB_impulse;
     
     clear outB_* rB_*;
 end
