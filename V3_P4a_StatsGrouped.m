@@ -63,7 +63,7 @@ if (d_grouped==1)
                                 case 1
                                     d_flowProcess=d_summary{d_perm,2}{d_solve,d_flowType}(1,1);
                                 case 2
-                                    d_flowProcess=d_summary{d_perm,2}{d_solve,d_flowType}(1,:);
+                                    d_flowProcess=d_summary{d_perm,2}{d_solve,d_flowType}(2,:);
                                 case 3
                                     d_flowProcess=d_summary{d_perm,2}{d_solve,d_flowType}(1:end,:);
                             end
