@@ -8,6 +8,7 @@ d_testN=0;
 setup_excelInput='InputParametersN.xlsx';
 setup_timeStamp=datestr(now,'yymmddTHHMM');
 setup_nModelZones=8;
+setup_ranSeedOffset=44332211;
 
 % Set up directory to store run files in
 mkdir('Runs',setup_timeStamp);
@@ -108,13 +109,13 @@ for d_perm=1:setup_nPerm
         d_temp=sscanf(char(ind_randSeedsStr{d_perm}),d_formatStr);
         for d_i=1:5 % 1=Zone Volume 2=Offset Release Rates 3=Flowrates 4=Sensor Specs 5=Sensor Concentrations
             if d_temp(d_i)==1
-                r_randSeeds(d_sim,d_i)=d_i; % Fixed seed
+                r_randSeeds(d_sim,d_i)=setup_ranSeedOffset+d_i; % Fixed seed
             elseif d_temp(d_i)==2
-                r_randSeeds(d_sim,d_i)=d_perm*100000+d_i; % Stepped Perm / Fixed MC
+                r_randSeeds(d_sim,d_i)=setup_ranSeedOffset+d_perm*100000+d_i; % Stepped Perm / Fixed MC
             elseif d_temp(d_i)==3
-                r_randSeeds(d_sim,d_i)=d_MC*100+d_i; % Fixed Perm / Stepped MC
+                r_randSeeds(d_sim,d_i)=setup_ranSeedOffset+d_MC*100+d_i; % Fixed Perm / Stepped MC
             elseif d_temp(d_i)==4
-                r_randSeeds(d_sim,d_i)=d_perm*100000+d_MC*100+d_i; % Stepped Perm / Stepped MC
+                r_randSeeds(d_sim,d_i)=setup_ranSeedOffset+d_perm*100000+d_MC*100+d_i; % Stepped Perm / Stepped MC
             else
                 r_randSeeds(d_sim,d_i)=0; % Random seed
             end
@@ -850,7 +851,7 @@ for d_batch=1:d_nBatch
                 d_imp=zeros(1,setup_nModelZones);
                 d_imp(d_i)=clc_zoneVol(d_i)*1000/1000000; % Will start impulse at 1000ppm
                 assignin('base','sim_imp',d_imp);
-                [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_ParaN',clc_seqPeriod);
+                [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',clc_seqPeriod);
                 clc_impulse(1:round(clc_seqPeriod/clc_stepSize+1),((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
             end
     
@@ -866,7 +867,7 @@ for d_batch=1:d_nBatch
     mat_outP1.out_prbsTracer(1,d_batchL:d_batchH)=outB_prbsTracer(1,d_batchL:d_batchH);
     mat_outP1.out_prbsFlow(1,d_batchL:d_batchH)=outB_prbsFlow(1,d_batchL:d_batchH);
     
-    if (clc_afType(1)=='S' | clc_afType(1)=='F') 
+    if (r_afType(d_batchL,1)=='S' | r_afType(d_batchL,1)=='F') 
         mat_outP1.out_pftConc(1,d_batchL:d_batchH)=outB_pftConc(1,d_batchL:d_batchH);
         mat_outP1.out_pftTracer(1,d_batchL:d_batchH)=outB_pftTracer(1,d_batchL:d_batchH);
         mat_outP1.out_pftFlow(1,d_batchL:d_batchH)=outB_pftFlow(1,d_batchL:d_batchH);
