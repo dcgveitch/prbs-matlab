@@ -102,7 +102,7 @@ for d_perm=1:setup_nPerm
         % Set basic non-MC variables
         r_noiseRefsStr(d_sim,:)=ind_noiseRefsStr(d_perm,:);
         r_afType(d_sim,:)=ind_afType(d_perm,:);    
-        r_sensorResp(d_sim)=ind_sensorResp(d_perm)/3600;
+        r_sensorResp(d_sim)=ind_sensorResp(d_perm);
         
         % Set random number seeding
         d_formatStr='%f_';
@@ -145,7 +145,7 @@ for d_perm=1:setup_nPerm
         end
         
         % Simulation Step Size
-        r_stepSize(d_sim)=r_seqPeriod(d_sim)/(r_seqLength(d_sim)*r_seqMultiple(d_sim))/ceil(r_seqPeriod(d_sim)/(r_seqLength(d_sim)*r_seqMultiple(d_sim))/setup_stepTime); % Round divisor to make timestep a factor of the PRBS dT
+        r_stepSize(d_sim)=r_seqPeriod(d_sim)/(r_seqLength(d_sim)*r_seqMultiple(d_sim))/ceil(r_seqPeriod(d_sim)/(r_seqLength(d_sim)*r_seqMultiple(d_sim))/setup_stepTime)*3600; % Round divisor to make timestep a factor of the PRBS dT
         
         % Sequence Averaging
         if (strcmp(ind_nSeqAverage{d_perm}(1),'M'))
@@ -230,8 +230,8 @@ for d_perm=1:setup_nPerm
         end
         d_release=d_releaseT+d_releaseT*d_rateSD.*randn(1,length(d_releaseT)); % Add random variation
         
-        r_releaseRate{d_sim} = d_release; % Actual release rate
-        r_releaseRateT{d_sim}= d_releaseT; % Theoretical release rate for calculations
+        r_releaseRate{d_sim} = d_release/3600; % Actual release rate
+        r_releaseRateT{d_sim}= d_releaseT/3600; % Theoretical release rate for calculations
 
         % Sensor Spec MC
         if (strcmp(ind_sensorSpecStr{d_perm}(1),'M'))
@@ -581,7 +581,7 @@ for d_perm=1:setup_nPerm
         for d_zone1=1:r_tZones(d_sim)
             for d_zone2=1:r_tZones(d_sim)
                 d_i = (d_zone1-1)*r_tZones(d_sim) + d_zone2;
-                r_flowSim{d_sim}(:,d_i) = squeeze(d_flow(d_zone1,d_zone2,:));
+                r_flowSim{d_sim}(:,d_i) = squeeze(d_flow(d_zone1,d_zone2,:))/3600;
             end
         end
     end
@@ -596,7 +596,7 @@ for d_batch=1:d_nBatch
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
     
     %% Begin permutations
-    parfor ref_perm = d_batchL:d_batchH
+    for ref_perm = d_batchL:d_batchH
         disp(['-Run ' num2str(ref_perm) '/' num2str(setup_nSim)]);
 
         %% Assign temporary variables
@@ -660,7 +660,7 @@ for d_batch=1:d_nBatch
             for d_i = 0:(clc_nSeq-1)
                 for d_j = 0:(clc_seqLength-1)
                     for d_k = 0:(clc_seqMultiple-1)
-                        d_temp(d_count,1) = (d_i*clc_seqLength*clc_seqMultiple+d_j*clc_seqMultiple+d_k)*clc_dth;
+                        d_temp(d_count,1) = (d_i*clc_seqLength*clc_seqMultiple+d_j*clc_seqMultiple+d_k)*clc_dt;
                         d_temp(d_count,2) = clc_PRBSshift(d_j+1);           
                         % Generate full tracer schedule for input file
                         clc_inputDay(d_count,d_zone) = clc_PRBSshift(d_j+1);
@@ -676,7 +676,7 @@ for d_batch=1:d_nBatch
             d_temp=clc_tSchedule{d_zone};
             for d_i=1:clc_nDays-1
                 % Add 24 hours to the time in the base sequence before appending
-                d_temp(:,1)=d_temp(:,1)+24;
+                d_temp(:,1)=d_temp(:,1)+24*60*60;
                 clc_tSchedule{d_zone}=[clc_tSchedule{d_zone}; d_temp];
             end    
         end
@@ -741,7 +741,7 @@ for d_batch=1:d_nBatch
 
         %% Zone flowrates
         if (clc_afType(1)=='S' | clc_afType(1)=='F') % For scheduled flowates
-            clc_Q=[0:30/3600:(clc_nDays*24)]'; % 30 second basis
+            clc_Q=[0:30:(clc_nDays*24*3600)]'; % 30 second basis
             clc_Q=[clc_Q clc_flowSim];
 
             % Fill in blank flowrates into matrix
@@ -779,7 +779,7 @@ for d_batch=1:d_nBatch
         
         
         disp(['Main Sim ' datestr(now)]);
-        [sim_prbsT,sim_prbsX,sim_prbsConc,sim_prbsTracer,sim_prbsFlow,sim_prbsSensConc]=sim('PRBS_Para',clc_nDays*24);
+        [sim_prbsT,sim_prbsX,sim_prbsConc,sim_prbsTracer,sim_prbsFlow,sim_prbsSensConc]=sim('PRBS_Para',clc_nDays*24*3600);
 
         %% Read in Simulation Results
         % Tracer concentrations - starting after stabilisation, read in sequences required
@@ -790,7 +790,7 @@ for d_batch=1:d_nBatch
 
         d_count=1;
         for d_i=1:clc_cSeqLength*clc_nRunSeq;
-            while round(sim_prbsT(d_count,1)*10^7) < round(((setup_nDaysStab*24)+(d_i*clc_dth))*10^7);
+            while round(sim_prbsT(d_count,1)*10^4) < round(((setup_nDaysStab*24)+(d_i*clc_dt))*10^4);
                 d_count=d_count+1;
             end
             sim_flowPRBS(d_i,1:clc_tZones^2)=sim_prbsFlow(d_count,1:clc_tZones^2);
@@ -826,7 +826,7 @@ for d_batch=1:d_nBatch
             assignin('base','sim_releaseRate',clc_releaseRateSimPFT);
             
             disp(['PFT Sim ' datestr(now)]);
-            [sim_pftT,sim_pftX,sim_pftConc,sim_pftTracer,sim_pftFlow,sim_pftSensConc]=sim('PRBS_Para',clc_nDays*24);
+            [sim_pftT,sim_pftX,sim_pftConc,sim_pftTracer,sim_pftFlow,sim_pftSensConc]=sim('PRBS_Para',clc_nDays*24*3600);
 
             outB_pftConc{ref_perm}=sim_pftConc(:,1:clc_tZones);
             outB_pftTracer{ref_perm}=sim_pftTracer(1,1:clc_tZones);
@@ -851,8 +851,8 @@ for d_batch=1:d_nBatch
                 d_imp=zeros(1,setup_nModelZones);
                 d_imp(d_i)=clc_zoneVol(d_i)*1000/1000000; % Will start impulse at 1000ppm
                 assignin('base','sim_imp',d_imp);
-                [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',clc_seqPeriod);
-                clc_impulse(1:round(clc_seqPeriod/clc_stepSize+1),((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
+                [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',clc_seqPeriod*3600);
+                clc_impulse(1:round(clc_seqPeriod*3600/clc_stepSize+1),((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
             end
     
             % Clear large variables

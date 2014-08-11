@@ -48,7 +48,7 @@ for d_batch=1:d_nBatch
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
     
-    parfor ref_bPerm = 1:d_batchSize
+    for ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -102,7 +102,7 @@ for d_batch=1:d_nBatch
 
         d_count=1;
         for d_i=1:clc_cSeqLength*clc_nRunSeq;
-            while round(clc_stepSize*(d_count-1)*10^7) < round((setup_nDaysStab*24+(d_i*clc_dth))*10^7);
+            while round(clc_stepSize*(d_count-1)*10^4) < round((setup_nDaysStab*24+(d_i*clc_dt))*10^4);
                 d_count=d_count+1;
             end
             sim_conc{1}(d_i,1:clc_tZones)=sim_prbsConc(d_count,1:clc_tZones);
@@ -154,7 +154,7 @@ for d_batch=1:d_nBatch
             end
         end  
 
-        d_a=(clc_dt/3600)/(clc_sensorResp);
+        d_a=(clc_dt)/(clc_sensorResp);
         if d_a~=inf
             sim_conc{5}=filter([1 d_a-1], d_a, sim_conc{4});
         else
@@ -173,7 +173,7 @@ for d_batch=1:d_nBatch
 
             d_count=1;
             for d_i=1:clc_cSeqLength
-                while round(clc_stepSize*(d_count-1)*10^7) < round((d_i*clc_dth)*10^7);
+                while round(clc_stepSize*(d_count-1)*10^4) < round((d_i*clc_dt)*10^4);
                     d_count=d_count+1;
                 end
                 sim_impulse{1}(d_i,1:clc_tZones^2)=sim_impulseRaw(d_count,1:clc_tZones^2);
@@ -196,7 +196,7 @@ for d_batch=1:d_nBatch
             end
 
             if (ismember(5,d_reqConc))
-                d_a=(clc_dt/3600)/(clc_sensorResp);
+                d_a=(clc_dt)/(clc_sensorResp);
                 if d_a~=inf
                     for d_i=1:clc_nZones
                         for d_j=1:clc_nZones
@@ -327,7 +327,7 @@ for d_batch=1:d_nBatch
                         cll_X=[];
                         cll_Xach=[];
                         cll_Xflow=[];
-                        cll_dt=clc_dth;
+                        cll_dt=clc_dt;
 
                         % Calculate flowrates
                         if (d_imp==3)
