@@ -14,22 +14,35 @@ mat_outP4=matfile(strcat(d_folderTS(1:11), '__outP4.mat'),'Writable',true);
 
 out_aFlowResults=mat_outP3.out_aFlowResults;
     
-d_reqSolve=[1 2 3];
-d_reqImp=[1 2];
-d_reqConc=[1 2];
+d_reqSolve=[1];
+d_reqImp=[1 2 3];
+d_reqConc=[1 2 3 4];
 
-d_solve=1;
+d_solve=d_reqSolve;
+d_impulse=d_reqImp;
+d_conc=d_reqConc;
 d_seqA=1;
 
 d_grouped=1;
 
 if (d_grouped==1)
-    id_1=r_seqLength;
+    id_1=r_nZones;
     id_2=r_seqPeriod;
+    id_3=r_seqLength;
 
     id_group1=unique(id_1);
     id_group2=unique(id_2);
-  
+
+%     d_graph=cell(length(id_group1),length(id_group2));
+% 
+%     for i=1:length(id_1)    
+%         d_pos1=find(id_group1==id_1(i));
+%         d_pos2=find(id_group2==id_2(i));
+% 
+%         d_graph{d_pos1,d_pos2}(end+1,2)=out_aFlowResults(i);
+%         d_graph{d_pos1,d_pos2}{end,1}=i;
+%     end
+    
     for d_impulse=d_reqImp
         for d_conc=d_reqConc
             disp(['Type ' num2str(d_impulse) ':' num2str(d_conc)]);
@@ -42,7 +55,7 @@ if (d_grouped==1)
                     d_count2=ones(1,3);
                     disp(['Group ' num2str(d_count1) ]);
                     
-                    d_selection=(id_1==id_group1(d_pos1)) & (id_2==id_group2(d_pos2));
+                    d_selection=(id_1==id_group1(d_pos1)) & (id_2==id_group2(d_pos2)) & (id_3==15);
                     if (isempty(find(d_selection)))
                         continue;
                     end
@@ -117,11 +130,13 @@ if (d_grouped==1)
                     end
                     out_aFlowErrorW{d_impulse,d_conc}(d_count1,1)=id_group1(d_pos1);
                     out_aFlowErrorW{d_impulse,d_conc}(d_count1,2)=id_group2(d_pos2);
-                    out_aFlowErrorW{d_impulse,d_conc}(d_count1,3:35)=d_errorSummary(1,:);
+                    out_aFlowErrorW{d_impulse,d_conc}(d_count1,3)=mean(id_3(d_selection));
+                    out_aFlowErrorW{d_impulse,d_conc}(d_count1,4:36)=d_errorSummary(1,:);
 
                     out_aFlowErrorNW{d_impulse,d_conc}(d_count1,1)=id_group1(d_pos1);
                     out_aFlowErrorNW{d_impulse,d_conc}(d_count1,2)=id_group2(d_pos2);
-                    out_aFlowErrorNW{d_impulse,d_conc}(d_count1,3:35)=d_errorSummary(2,:);
+                    out_aFlowErrorNW{d_impulse,d_conc}(d_count1,3)=mean(id_3(d_selection));
+                    out_aFlowErrorNW{d_impulse,d_conc}(d_count1,4:36)=d_errorSummary(2,:);
                     d_count1=d_count1+1;
                 end
             end

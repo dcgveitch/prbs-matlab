@@ -22,9 +22,9 @@ else
     d_pft=0;
 end  
 
-d_reqSolve=[1 2 3];
+d_reqSolve=[1];
 d_reqImp=[1 2 3];
-d_reqConc=[1];
+d_reqConc=[1 2 3 4];
 
 d_nBatch=ceil(setup_nSim/setup_batchSize);
 setup_batchTrim=setup_batchSize;
