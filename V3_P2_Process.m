@@ -12,39 +12,48 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
-d_reqSolve=[1];
-d_reqImp=[1 2 3];
+d_reqSolve=[1 2 3];
+d_reqImp=[1 2];
 d_reqConc=[1 2 3 4];
 
-d_nBatch=ceil(setup_nSim/setup_batchSize);
-setup_batchTrim=setup_batchSize;
+setup_batchSize=10;
+setup_batchProc=14;
+setup_batchTrim=1;
+d_batchRef=[];
 
-for d_batch=1:d_nBatch
-    d_batchL=(d_batch-1)*setup_batchSize+1;
-    d_batchH=min(d_batchL+setup_batchTrim-1,setup_nSim);
-    d_batchSize=d_batchH-d_batchL+1;
+for d_i=1:ceil(setup_nSim/setup_batchSize)
+    for d_j=1:setup_batchTrim
+        d_batchRef=[d_batchRef (d_i-1)*setup_batchSize+d_j];
+    end
+end
+
+for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
+    d_batchL=(d_batch-1)*setup_batchProc+1;
+    d_batchH=min(d_batchL+setup_batchProc-1,length(d_batchRef));
+    d_batchRun=d_batchRef(d_batchL:d_batchH);
+    d_batchSize=length(d_batchRun);
     
-    rB_nZones=r_nZones(d_batchL:d_batchH);
-    rB_nDays=r_nDays(d_batchL:d_batchH);
-    rB_tZones=r_tZones(d_batchL:d_batchH);
-    rB_seqLength=r_seqLength(d_batchL:d_batchH);
-    rB_seqPeriod=r_seqPeriod(d_batchL:d_batchH);
-    rB_seqMultiple=r_seqMultiple(d_batchL:d_batchH);
-    rB_stepSize=r_stepSize(d_batchL:d_batchH);
-    rB_nSeqAverage=r_nSeqAverage(d_batchL:d_batchH);
-    rB_releaseRate=r_releaseRate(d_batchL:d_batchH);
-    rB_releaseRateT=r_releaseRateT(d_batchL:d_batchH);
-    rB_zoneVol=r_zoneVol(d_batchL:d_batchH,:);
-    rB_zoneVolGain=r_zoneVolGain(d_batchL:d_batchH,:);
-    rB_mixModel=r_mixModel(d_batchL:d_batchH);
-    rB_sensorSpecType=r_sensorSpecType(d_batchL:d_batchH);
-    rB_sensorSpecRefs=r_sensorSpecRefs(d_batchL:d_batchH);
-    rB_sensorResp=r_sensorResp(d_batchL:d_batchH);
-    rB_noiseRefsStr=r_noiseRefsStr(d_batchL:d_batchH);
-    rB_afType=r_afType(d_batchL:d_batchH,:);
-    rB_randSeeds=r_randSeeds(d_batchL:d_batchH,:);
+    rB_nZones=r_nZones(d_batchRun);
+    rB_nDays=r_nDays(d_batchRun);
+    rB_tZones=r_tZones(d_batchRun);
+    rB_seqLength=r_seqLength(d_batchRun);
+    rB_seqPeriod=r_seqPeriod(d_batchRun);
+    rB_seqMultiple=r_seqMultiple(d_batchRun);
+    rB_stepSize=r_stepSize(d_batchRun);
+    rB_nSeqAverage=r_nSeqAverage(d_batchRun);
+    rB_releaseRate=r_releaseRate(d_batchRun);
+    rB_releaseRateT=r_releaseRateT(d_batchRun);
+    rB_zoneVol=r_zoneVol(d_batchRun,:);
+    rB_zoneVolGain=r_zoneVolGain(d_batchRun,:);
+    rB_mixModel=r_mixModel(d_batchRun);
+    rB_sensorSpecType=r_sensorSpecType(d_batchRun);
+    rB_sensorSpecRefs=r_sensorSpecRefs(d_batchRun);
+    rB_sensorResp=r_sensorResp(d_batchRun);
+    rB_noiseRefsStr=r_noiseRefsStr(d_batchRun);
+    rB_afType=r_afType(d_batchRun,:);
+    rB_randSeeds=r_randSeeds(d_batchRun,:);
     
-    disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
+    disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     
     parfor ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
@@ -78,9 +87,9 @@ for d_batch=1:d_nBatch
         clc_dth = clc_seqPeriod/(clc_seqLength*clc_seqMultiple); % Hours
         clc_nRunSeq=(clc_nDays-setup_nDaysStab)*24/clc_seqPeriod;
         
-        sim_inputFull=cell2mat(mat_outP1.out_input(1,d_batchL+ref_bPerm-1));
-        sim_prbsConc=cell2mat(mat_outP1.out_prbsConc(1,d_batchL+ref_bPerm-1));
-        sim_prbsFlow=cell2mat(mat_outP1.out_prbsFlow(1,d_batchL+ref_bPerm-1));
+        sim_inputFull=cell2mat(mat_outP1.out_input(1,d_batchRun(ref_bPerm)));
+        sim_prbsConc=cell2mat(mat_outP1.out_prbsConc(1,d_batchRun(ref_bPerm)));
+        sim_prbsFlow=cell2mat(mat_outP1.out_prbsFlow(1,d_batchRun(ref_bPerm)));
         
         clc_flow=[];
         clc_crossCorr=[];
@@ -161,7 +170,7 @@ for d_batch=1:d_nBatch
 
         % Direct impulse traces
         if (ismember(3,d_reqImp))
-            sim_impulseRaw=cell2mat(mat_outP1.out_impulseSim(1,d_batchL+ref_bPerm-1))/1000;
+            sim_impulseRaw=cell2mat(mat_outP1.out_impulseSim(1,d_batchRun(ref_bPerm)))/1000;
             d_a=clc_stepSize/clc_sensorResp;
             if d_a~=inf
                 sim_impulseSens=filter(d_a, [1 d_a-1], sim_impulseRaw);
@@ -269,6 +278,7 @@ for d_batch=1:d_nBatch
         for d_conc=d_reqConc
             %%%
             for d_noise=1:size(sim_conc{d_conc},3)
+                disp([' -Run ' num2str(ref_bPerm) ' Noise ' num2str(d_noise)]);
                 %%%
                 if (clc_afType=='S' || clc_afType=='F')
                     d_seqVlim=clc_nRunSeq-1;
@@ -525,11 +535,11 @@ for d_batch=1:d_nBatch
         outB_flow{ref_bPerm}=clc_flow;
     end
     
-    mat_outP2.out_prbsConcDisc(1,d_batchL:d_batchH)=outB_prbsConcDisc;
-    mat_outP2.out_simFlowTimeFull(1,d_batchL:d_batchH)=outB_simFlowTimeFull;
-    mat_outP2.out_simFlowTime(1,d_batchL:d_batchH)=outB_simFlowTime;
-    mat_outP2.out_simFlow(1,d_batchL:d_batchH)=outB_simFlow;    
-    mat_outP2.out_flow(1,d_batchL:d_batchH)=outB_flow;
+    mat_outP2.out_prbsConcDisc(1,d_batchRun)=outB_prbsConcDisc;
+    mat_outP2.out_simFlowTimeFull(1,d_batchRun)=outB_simFlowTimeFull;
+    mat_outP2.out_simFlowTime(1,d_batchRun)=outB_simFlowTime;
+    mat_outP2.out_simFlow(1,d_batchRun)=outB_simFlow;    
+    mat_outP2.out_flow(1,d_batchRun)=outB_flow;
     
     clear outB_* rB_*;
 end

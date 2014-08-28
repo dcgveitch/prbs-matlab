@@ -22,45 +22,54 @@ else
     d_pft=0;
 end  
 
-d_reqSolve=[1];
-d_reqImp=[1 2 3];
+d_reqSolve=[1 2 3];
+d_reqImp=[1 2];
 d_reqConc=[1 2 3 4];
 
-d_nBatch=ceil(setup_nSim/setup_batchSize);
-setup_batchTrim=setup_batchSize;
+setup_batchSize=10;
+setup_batchProc=14;
+setup_batchTrim=1;
+d_batchRef=[];
 
-for d_batch=1:d_nBatch
-    d_batchL=(d_batch-1)*setup_batchSize+1;
-    d_batchH=min(d_batchL+setup_batchTrim-1,setup_nSim);
-    d_batchSize=d_batchH-d_batchL+1;
+for d_i=1:ceil(setup_nSim/setup_batchSize)
+    for d_j=1:setup_batchTrim
+        d_batchRef=[d_batchRef (d_i-1)*setup_batchSize+d_j];
+    end
+end
+
+for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
+    d_batchL=(d_batch-1)*setup_batchProc+1;
+    d_batchH=min(d_batchL+setup_batchProc-1,length(d_batchRef));
+    d_batchRun=d_batchRef(d_batchL:d_batchH);
+    d_batchSize=length(d_batchRun);
     
-    rB_nZones=r_nZones(d_batchL:d_batchH);
-    rB_nDays=r_nDays(d_batchL:d_batchH);
-    rB_tZones=r_tZones(d_batchL:d_batchH);
-    rB_seqLength=r_seqLength(d_batchL:d_batchH);
-    rB_seqPeriod=r_seqPeriod(d_batchL:d_batchH);
-    rB_seqMultiple=r_seqMultiple(d_batchL:d_batchH);
-    rB_stepSize=r_stepSize(d_batchL:d_batchH);
-    rB_nSeqAverage=r_nSeqAverage(d_batchL:d_batchH);
-    rB_releaseRate=r_releaseRate(d_batchL:d_batchH);
-    rB_releaseRateT=r_releaseRateT(d_batchL:d_batchH);
-    rB_zoneVol=r_zoneVol(d_batchL:d_batchH,:);
-    rB_afType=r_afType(d_batchL:d_batchH,:);
+    rB_nZones=r_nZones(d_batchRun);
+    rB_nDays=r_nDays(d_batchRun);
+    rB_tZones=r_tZones(d_batchRun);
+    rB_seqLength=r_seqLength(d_batchRun);
+    rB_seqPeriod=r_seqPeriod(d_batchRun);
+    rB_seqMultiple=r_seqMultiple(d_batchRun);
+    rB_stepSize=r_stepSize(d_batchRun);
+    rB_nSeqAverage=r_nSeqAverage(d_batchRun);
+    rB_releaseRate=r_releaseRate(d_batchRun);
+    rB_releaseRateT=r_releaseRateT(d_batchRun);
+    rB_zoneVol=r_zoneVol(d_batchRun,:);
+    rB_afType=r_afType(d_batchRun,:);
     
-    rB_simFlow=mat_outP2.out_simFlow(1,d_batchL:d_batchH);
-    rB_simFlowTime=mat_outP2.out_simFlowTime(1,d_batchL:d_batchH);
-    rB_prbsFlow=mat_outP1.out_prbsFlow(1,d_batchL:d_batchH);
-    rB_simFlowTimeFull=mat_outP2.out_simFlowTimeFull(1,d_batchL:d_batchH);
-    rB_flow=mat_outP2.out_flow(1,d_batchL:d_batchH);
+    rB_simFlow=mat_outP2.out_simFlow(1,d_batchRun);
+    rB_simFlowTime=mat_outP2.out_simFlowTime(1,d_batchRun);
+    rB_prbsFlow=mat_outP1.out_prbsFlow(1,d_batchRun);
+    rB_simFlowTimeFull=mat_outP2.out_simFlowTimeFull(1,d_batchRun);
+    rB_flow=mat_outP2.out_flow(1,d_batchRun);
     if (d_pft==1)
-        rB_pftConc=mat_outP1.out_pftConc(1,d_batchL:d_batchH);
-        rB_pftTracer=mat_outP1.out_pftTracer(1,d_batchL:d_batchH);
+        rB_pftConc=mat_outP1.out_pftConc(1,d_batchRun);
+        rB_pftTracer=mat_outP1.out_pftTracer(1,d_batchRun);
     else
         rB_pftConc=[];
         rB_pftTracer=[];
     end
     
-    disp(['Processing Batch ' num2str(d_batch) '/' num2str(d_nBatch)]);
+    disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     
     parfor ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
@@ -351,10 +360,10 @@ for d_batch=1:d_nBatch
 %         end
     end
 
-    mat_outP3.out_aFlowResults(1,d_batchL:d_batchH)=outB_aFlowResults;
+    mat_outP3.out_aFlowResults(1,d_batchRun)=outB_aFlowResults;
 %     if (d_pft==1)
-%         mat_outP3.out_aFlowFullRef(1,d_batchL:d_batchH)=outB_aFlowFullRef;
-%         mat_outP3.out_aPftResults(1,d_batchL:d_batchH)=outB_aPftResults;
+%         mat_outP3.out_aFlowFullRef(1,d_batchRun)=outB_aFlowFullRef;
+%         mat_outP3.out_aPftResults(1,d_batchRun)=outB_aPftResults;
 %     end
     
     clear outB_* rB_*;
