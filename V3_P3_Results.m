@@ -22,13 +22,13 @@ else
     d_pft=0;
 end  
 
-d_reqSolve=[1 2 3];
+d_reqSolve=[1 4 5];
 d_reqImp=[1 2];
 d_reqConc=[1 2 3 4];
 
 setup_batchSize=10;
-setup_batchProc=14;
-setup_batchTrim=1;
+setup_batchProc=38;
+setup_batchTrim=10;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
@@ -82,7 +82,8 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_seqPeriod=rB_seqPeriod(ref_bPerm);
         clc_seqMultiple=rB_seqMultiple(ref_bPerm);
         clc_stepSize=rB_stepSize(ref_bPerm);
-        clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
+%         clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
+        clc_nSeqAverage=1;
         clc_releaseRate=rB_releaseRate{ref_bPerm};
         clc_releaseRateT=rB_releaseRateT{ref_bPerm};
         clc_zoneVol=rB_zoneVol(ref_bPerm,:);
