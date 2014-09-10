@@ -12,13 +12,13 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
-d_reqSolve=[1 2 3];
-d_reqImp=[1 2];
+d_reqSolve=[1];
+d_reqImp=[1 2 3];
 d_reqConc=[1 2 3 4];
 
-setup_batchSize=10;
-setup_batchProc=38;
-setup_batchTrim=10;
+setup_batchSize=25;
+setup_batchProc=50;
+setup_batchTrim=25;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)

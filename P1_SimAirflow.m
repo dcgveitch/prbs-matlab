@@ -10,15 +10,6 @@ setup_timeStamp=datestr(now,'yymmddTHHMM');
 setup_nModelZones=8;
 setup_ranSeedOffset=44332211;
 
-% Set up directory to store run files in
-mkdir('Runs',setup_timeStamp);
-copyfile('_INPUT',strcat('Runs/', setup_timeStamp, '/Input'));
-mkdir(strcat('Runs/', setup_timeStamp, '/Results'));
-addpath(genpath(strcat('Runs/', setup_timeStamp)), '-begin');
-cd(strcat('Runs/', setup_timeStamp));
-cd Results;
-mat_outP1=matfile(strcat(setup_timeStamp, '__outP1.mat'));
-
 % Read in sheets
 [in_numSetup,in_txtSetup,in_inputSetup] = xlsread(setup_excelInput, 'Setup');
 [in_numMain,in_txtMain,in_inputMain] = xlsread(setup_excelInput, 'Permutations');
@@ -29,7 +20,8 @@ mat_outP1=matfile(strcat(setup_timeStamp, '__outP1.mat'));
 [in_numGeo,in_txtGeo,in_inputGeo] = xlsread(setup_excelInput, 'Geometry');
 
 % General Setup Variables
-setup_runType = in_inputSetup{find(strcmp('runType',in_inputSetup(:,1))),2}; 
+setup_runType = in_inputSetup{find(strcmp('runType',in_inputSetup(:,1))),2};
+setup_runDesc = in_inputSetup{find(strcmp('runDesc',in_inputSetup(:,1))),2}; 
 setup_nDaysStab = in_inputSetup{find(strcmp('nDaysStab',in_inputSetup(:,1))),2};
 setup_nDaysRun = in_inputSetup{find(strcmp('nDaysRun',in_inputSetup(:,1))),2};
 setup_dT = in_inputSetup{find(strcmp('dT',in_inputSetup(:,1))),2};
@@ -44,7 +36,18 @@ in_noiseAveNum = in_inputSetup{find(strcmp('noiseAveNum',in_inputSetup(:,1))),2}
 in_mcSeqLength=[15 31 63 127 255];
 in_mcSeqPeriod=[2 3 4 6 8 12 24];
 in_mcNZones=[2 3 5 8];
-in_mcZoneVol=[60 52 40 30];   
+in_mcZoneVol=[60 52 40 30];
+
+% Set up directory to store run files in
+setup_runFolder=[setup_timeStamp '_' setup_runDesc];
+mkdir('Runs',setup_runFolder);
+copyfile('_INPUT',strcat('Runs/', setup_runFolder, '/Input'));
+mkdir(strcat('Runs/', setup_runFolder, '/Results'));
+addpath(genpath(strcat('Runs/', setup_runFolder)), '-begin');
+cd(strcat('Runs/', setup_runFolder));
+cd Results;
+
+mat_outP1=matfile(strcat(setup_timeStamp, '__outP1.mat'));
 
 % Calculate number of permutations (either Monte Carlo or Scheduled)
 if (strcmp(setup_runType(1),'M'))
@@ -213,13 +216,13 @@ for d_perm=1:setup_nPerm
         end
         
         if (strcmp(ind_releaseRate{d_perm}(1),'M'))
-            d_rateSD=sscanf(char(ind_releaseRate{d_perm}(3:end)),'%f');
+            d_rateSD=sscanf(char(ind_releaseRate{d_perm}(3:end)),'%f %f');
             for d_zone=1:r_nZones(d_sim)
                 d_releaseT(d_zone)=in_mcZoneVol(d_zoneMC)*0.5*1000/1000000*2; % Approximately 1000ppm at 0.5ACH
             end
         else
-            d_rateSD=sscanf(char(ind_releaseRate{d_perm}(1:4)),'%f');
-            d_rate=sscanf(char(ind_releaseRate{d_perm}(6:end)),'%f_');
+            d_rateSD=sscanf(char(ind_releaseRate{d_perm}(1:9)),'%f %f');
+            d_rate=sscanf(char(ind_releaseRate{d_perm}(10:end)),'%f_');
             if (length(d_rate)<r_nZones(d_sim)) % Not all zones supplied, use 1st only
                 for d_zone=1:r_nZones(d_sim)
                     d_releaseT(d_zone)=d_rate(1);
@@ -228,7 +231,8 @@ for d_perm=1:setup_nPerm
                 d_releaseT(1:length(d_rate))=d_rate;
             end
         end
-        d_release=d_releaseT+d_releaseT*d_rateSD.*randn(1,length(d_releaseT)); % Add random variation
+        d_releaseBias=d_releaseT*d_rateSD(1)*randn; % Add bias (consistent across zones)
+        d_release=d_releaseT+d_releaseBias+d_releaseT*d_rateSD(2).*randn(1,length(d_releaseT)); % Add random uncertainty
         
         r_releaseRate{d_sim} = d_release; % Actual release rate
         r_releaseRateT{d_sim}= d_releaseT; % Theoretical release rate for calculations
