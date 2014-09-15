@@ -115,7 +115,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                 d_count=d_count+1;
             end
             sim_conc{1}(d_i,1:clc_tZones)=sim_prbsConc(d_count,1:clc_tZones);
-            sim_conc{2}(d_i,1:clc_tZones)=sim_prbsSensConc(d_count,1:clc_tZones);
+            sim_conc{5}(d_i,1:clc_tZones)=sim_prbsSensConc(d_count,1:clc_tZones);
         end
 
         sim_prbsConc=[];
@@ -158,16 +158,22 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
 
         for d_i=1:clc_nZones
             for d_noise=1:in_noiseAveNum
-                sim_conc{3}(:,d_i,d_noise)=((sim_conc{1}(:,d_i)*clc_sensorSpec(d_i,d_noise,1))+clc_sensorSpec(d_i,d_noise,2)+(clc_sensorSpec(d_i,d_noise,3)*(1+sim_conc{1}(:,d_i)./setup_sensRNSDrange).*randn(length(sim_conc{1}(:,d_i)),1)));
-                sim_conc{4}(:,d_i,d_noise)=((sim_conc{2}(:,d_i)*clc_sensorSpec(d_i,d_noise,1))+clc_sensorSpec(d_i,d_noise,2)+(clc_sensorSpec(d_i,d_noise,3)*(1+sim_conc{2}(:,d_i)./setup_sensRNSDrange).*randn(length(sim_conc{2}(:,d_i)),1)));
+                d_concRand=randn(length(sim_conc{1}(:,d_i)),1);
+                sim_conc{2}(:,d_i,d_noise)=sim_conc{1}(:,d_i)*clc_sensorSpec(d_i,d_noise,1); % Span only
+                sim_conc{3}(:,d_i,d_noise)=sim_conc{1}(:,d_i)+clc_sensorSpec(d_i,d_noise,2); % Offset only                
+                sim_conc{4}(:,d_i,d_noise)=sim_conc{1}(:,d_i)+(clc_sensorSpec(d_i,d_noise,3)*(1+sim_conc{1}(:,d_i)./setup_sensRNSDrange).*d_concRand); % Random only
+                sim_conc{6}(:,d_i,d_noise)=((sim_conc{5}(:,d_i)*clc_sensorSpec(d_i,d_noise,1))+clc_sensorSpec(d_i,d_noise,2)+(clc_sensorSpec(d_i,d_noise,3)*(1+sim_conc{5}(:,d_i)./setup_sensRNSDrange).*d_concRand));
+                sim_conc{7}(:,d_i,d_noise)=((sim_conc{1}(:,d_i)*clc_sensorSpec(d_i,d_noise,1))+clc_sensorSpec(d_i,d_noise,2)+(clc_sensorSpec(d_i,d_noise,3)*(1+sim_conc{1}(:,d_i)./setup_sensRNSDrange).*d_concRand));
             end
         end  
 
-        d_a=(clc_dt/3600)/(clc_sensorResp);
-        if d_a~=inf
-            sim_conc{5}=filter([1 d_a-1], d_a, sim_conc{4});
-        else
-            sim_conc{5}=sim_conc{4};
+        if (ismember(8,d_reqConc))
+            d_a=(clc_dt/3600)/(clc_sensorResp);
+            if d_a~=inf
+                sim_conc{8}=filter([1 d_a-1], d_a, sim_conc{6});
+            else
+                sim_conc{8}=sim_conc{6};
+            end
         end
 
         % Direct impulse traces
@@ -196,27 +202,31 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                 for d_j=1:clc_nZones
                     d_count=(d_i-1)*clc_nZones+d_j;
                     clc_crossCorrD{3,1}(:,d_i,d_j)=sim_impulse{1}(:,d_count);
-                    clc_crossCorrD{3,2}(:,d_i,d_j)=sim_impulse{2}(:,d_count);
+                    clc_crossCorrD{3,5}(:,d_i,d_j)=sim_impulse{2}(:,d_count);
                     for d_noise=1:in_noiseAveNum
-                        clc_crossCorrD{3,3}(:,d_i,d_j,d_noise)=((sim_impulse{1}(:,d_count)*clc_sensorSpec(d_j,d_noise,1))+clc_sensorSpec(d_j,d_noise,2)+(clc_sensorSpec(d_j,d_noise,3)*(1+sim_impulse{1}(:,d_count)./setup_sensRNSDrange).*randn(length(sim_impulse{1}(:,d_count)),1)));
-                        clc_crossCorrD{3,4}(:,d_i,d_j,d_noise)=((sim_impulse{2}(:,d_count)*clc_sensorSpec(d_j,d_noise,1))+clc_sensorSpec(d_j,d_noise,2)+(clc_sensorSpec(d_j,d_noise,3)*(1+sim_impulse{2}(:,d_count)./setup_sensRNSDrange).*randn(length(sim_impulse{2}(:,d_count)),1)));
+                        d_concRand=randn(length(sim_impulse{1}(:,d_count)),1);
+                        clc_crossCorrD{3,2}(:,d_i,d_j,d_noise)=sim_impulse{1}(:,d_count)*clc_sensorSpec(d_j,d_noise,1); % Span only
+                        clc_crossCorrD{3,3}(:,d_i,d_j,d_noise)=sim_impulse{1}(:,d_count)+clc_sensorSpec(d_j,d_noise,2); % Offset only
+                        clc_crossCorrD{3,4}(:,d_i,d_j,d_noise)=sim_impulse{1}(:,d_count)+(clc_sensorSpec(d_j,d_noise,3)*(1+sim_impulse{1}(:,d_count)./setup_sensRNSDrange).*d_concRand); % Random only
+                        clc_crossCorrD{3,6}(:,d_i,d_j,d_noise)=((sim_impulse{2}(:,d_count)*clc_sensorSpec(d_j,d_noise,1))+clc_sensorSpec(d_j,d_noise,2)+(clc_sensorSpec(d_j,d_noise,3)*(1+sim_impulse{2}(:,d_count)./setup_sensRNSDrange).*d_concRand));
+                        clc_crossCorrD{3,7}(:,d_i,d_j,d_noise)=((sim_impulse{1}(:,d_count)*clc_sensorSpec(d_j,d_noise,1))+clc_sensorSpec(d_j,d_noise,2)+(clc_sensorSpec(d_j,d_noise,3)*(1+sim_impulse{1}(:,d_count)./setup_sensRNSDrange).*d_concRand));
                     end
                 end
             end
 
-            if (ismember(5,d_reqConc))
+            if (ismember(8,d_reqConc))
                 d_a=(clc_dt/3600)/(clc_sensorResp);
                 if d_a~=inf
                     for d_i=1:clc_nZones
                         for d_j=1:clc_nZones
                             d_count=(d_i-1)*clc_nZones+d_j;
                             for d_noise=1:in_noiseAveNum
-                                clc_crossCorrD{3,5}(:,d_i,d_j,d_noise)=filter([1 d_a-1], d_a, clc_crossCorrD{3,4}(:,d_i,d_j,d_noise));
+                                clc_crossCorrD{3,8}(:,d_i,d_j,d_noise)=filter([1 d_a-1], d_a, clc_crossCorrD{3,6}(:,d_i,d_j,d_noise));
                             end
                         end
                     end
                 else
-                    clc_crossCorrD{3,5}=clc_crossCorrD{3,4};
+                    clc_crossCorrD{3,8}=clc_crossCorrD{3,6};
                 end
             end
         end
