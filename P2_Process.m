@@ -16,7 +16,7 @@ d_reqSolve=[1];
 d_reqImp=[1 2 3];
 d_reqConc=[1 2 3 4];
 
-save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*')
+save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*', '-append')
 
 setup_batchSize=25;
 setup_batchProc=50;
@@ -280,7 +280,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         for d_conc=d_reqConc
             %%%
             for d_noise=1:size(sim_conc{d_conc},3)
-                disp([' --Run ' num2str(ref_bPerm) ' Noise ' num2str(d_noise) '/' num2str(size(sim_conc{d_conc},3))]);
+                % disp([' --Run ' num2str(ref_bPerm) ' Noise ' num2str(d_noise) '/' num2str(size(sim_conc{d_conc},3))]);
                 %%%
                 if (clc_afType=='S' || clc_afType=='F')
                     d_seqVlim=clc_nRunSeq-1;

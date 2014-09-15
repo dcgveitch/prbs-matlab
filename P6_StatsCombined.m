@@ -12,12 +12,8 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
 mat_outP6=matfile(strcat(d_folderTS(1:11), '__outP6.mat'),'Writable',true);
 
-
-d_reqSolve=[1 4 5];
-d_reqImp=[1 2];
-d_reqConc=[1 2 3 4];
 d_reqNSeqA=1;
-d_reqTSeqA=[1];
+d_reqTSeqA=1;
 
 ind_1_Group=unique(r_seqLength);
 ind_2_Group=unique(r_seqPeriod);
@@ -25,11 +21,9 @@ ind_3_Group=unique(r_nZones);
 
 mat_outP6.out_resultsCombined=cell(1,1,1,1,1,1,1,1,2);
 
-setup_nSim=38;
-
-setup_batchSize=10;
-setup_batchProc=7;
-setup_batchTrim=10;
+setup_batchSize=25;
+setup_batchProc=50;
+setup_batchTrim=25;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
