@@ -834,7 +834,6 @@ for d_batch=1:d_nBatch
 
             outB_pftConc{ref_perm}=sim_pftConc(:,1:clc_tZones);
             outB_pftTracer{ref_perm}=sim_pftTracer(1,1:clc_tZones);
-            outB_pftFlow{ref_perm}=sim_pftFlow(:,1:clc_tZones^2);
 
             % Clear large variables
             sim_pftT=[];
@@ -874,7 +873,6 @@ for d_batch=1:d_nBatch
     if (r_afType(d_batchL,1)=='S' | r_afType(d_batchL,1)=='F') 
         mat_outP1.out_pftConc(1,d_batchL:d_batchH)=outB_pftConc(1,d_batchL:d_batchH);
         mat_outP1.out_pftTracer(1,d_batchL:d_batchH)=outB_pftTracer(1,d_batchL:d_batchH);
-        mat_outP1.out_pftFlow(1,d_batchL:d_batchH)=outB_pftFlow(1,d_batchL:d_batchH);
     else
         mat_outP1.out_impulseSim(1,d_batchL:d_batchH)=outB_impulseSim(1,d_batchL:d_batchH);
     end
