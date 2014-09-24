@@ -21,9 +21,9 @@ ind_3_Group=unique(r_nZones);
 
 mat_outP6.out_resultsCombined=cell(1,1,1,1,1,1,1,1,2);
 
-setup_batchSize=25;
+setup_batchSize=5;
 setup_batchProc=50;
-setup_batchTrim=25;
+setup_batchTrim=5;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)

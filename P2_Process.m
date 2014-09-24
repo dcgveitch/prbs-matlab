@@ -13,14 +13,14 @@ mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
 d_reqSolve=[1];
-d_reqImp=[1 2 3];
-d_reqConc=[1 2 3 4];
+d_reqImp=[1];
+d_reqConc=[1];
 
 save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*', '-append')
 
-setup_batchSize=25;
+setup_batchSize=1;
 setup_batchProc=50;
-setup_batchTrim=25;
+setup_batchTrim=1;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
@@ -545,6 +545,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
             end
         end
         outB_flow{ref_bPerm}=clc_flow;
+        outB_prbsCrossCorr{ref_bPerm}=clc_crossCorr{1};
     end
     
     mat_outP2.out_prbsConcDisc(1,d_batchRun)=outB_prbsConcDisc;
@@ -552,6 +553,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     mat_outP2.out_simFlowTime(1,d_batchRun)=outB_simFlowTime;
     mat_outP2.out_simFlow(1,d_batchRun)=outB_simFlow;    
     mat_outP2.out_flow(1,d_batchRun)=outB_flow;
+    mat_outP2.out_prbsCrossCorr(1,d_batchRun)=outB_prbsCrossCorr;
     
     clear outB_* rB_*;
 end

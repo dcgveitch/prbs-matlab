@@ -5,13 +5,15 @@ clear;
 %#ok<*FNDSB>
 tic
 
-[d_upperPath, d_folderTS, ~] = fileparts(pwd);
+[d_upperPath, d_folder, ~] = fileparts(pwd);
+if d_folder(2)=='_', d_folderTS=d_folder(5:15);
+else d_folderTS=d_folder(1:11); end
 
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
-mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
-mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
-mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
+mat_outP1=matfile(strcat(d_folderTS, '__outP1.mat'),'Writable',true);
+mat_outP2=matfile(strcat(d_folderTS, '__outP2.mat'),'Writable',true);
+mat_outP3=matfile(strcat(d_folderTS, '__outP3.mat'),'Writable',true);
 
 mat_outP1Info=whos(mat_outP1);
 if (ismember('out_pftConc', {mat_outP1Info.name}))
@@ -20,9 +22,9 @@ else
     d_pft=0;
 end  
 
-setup_batchSize=25;
-setup_batchProc=50;
-setup_batchTrim=25;
+setup_batchSize=setup_nMC;
+setup_batchProc=18;
+setup_batchTrim=1;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
@@ -30,6 +32,8 @@ for d_i=1:ceil(setup_nSim/setup_batchSize)
         d_batchRef=[d_batchRef (d_i-1)*setup_batchSize+d_j];
     end
 end
+
+d_batchRef(d_batchRef>setup_nSim)=[];
 
 for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     d_batchL=(d_batch-1)*setup_batchProc+1;
@@ -76,8 +80,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_seqPeriod=rB_seqPeriod(ref_bPerm);
         clc_seqMultiple=rB_seqMultiple(ref_bPerm);
         clc_stepSize=rB_stepSize(ref_bPerm);
-%         clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
-        clc_nSeqAverage=1;
+        clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
         clc_releaseRate=rB_releaseRate{ref_bPerm};
         clc_releaseRateT=rB_releaseRateT{ref_bPerm};
         clc_zoneVol=rB_zoneVol(ref_bPerm,:);
