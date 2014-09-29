@@ -5,7 +5,9 @@ clear;
 %#ok<*FNDSB>
 tic
 
-[d_upperPath, d_folderTS, ~] = fileparts(pwd);
+[d_upperPath, d_folder, ~] = fileparts(pwd);
+if d_folder(2)=='_', d_folderTS=d_folder(5:15);
+else d_folderTS=d_folder(1:11); end
 
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
@@ -21,9 +23,9 @@ ind_3_Group=unique(r_nZones);
 
 mat_outP6.out_resultsCombined=cell(1,1,1,1,1,1,1,1,2);
 
-setup_batchSize=5;
-setup_batchProc=50;
-setup_batchTrim=5;
+setup_batchSize=setup_nMC;
+setup_batchProc=18;
+setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)

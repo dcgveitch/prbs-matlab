@@ -24,7 +24,7 @@ end
 
 setup_batchSize=setup_nMC;
 setup_batchProc=18;
-setup_batchTrim=1;
+setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
@@ -80,7 +80,8 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_seqPeriod=rB_seqPeriod(ref_bPerm);
         clc_seqMultiple=rB_seqMultiple(ref_bPerm);
         clc_stepSize=rB_stepSize(ref_bPerm);
-        clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
+%         clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
+        clc_nSeqAverage=1;
         clc_releaseRate=rB_releaseRate{ref_bPerm};
         clc_releaseRateT=rB_releaseRateT{ref_bPerm};
         clc_zoneVol=rB_zoneVol(ref_bPerm,:);

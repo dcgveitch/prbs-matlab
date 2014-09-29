@@ -39,10 +39,10 @@ for g1=1:nGroup(1)
                                                 for i8=req_i{8}
                                                     for i9=req_i{9}
                                                         try                                                    
-                                                            d_summary=[d_summary; out_resultsCombined{i1,i2,i3,i4,i5,i6,i7,i8,i9}];
+                                                            d_summary=[d_summary; cell2mat(mat_outP6.out_resultsCombined(i1,i2,i3,i4,i5,i6,i7,i8,i9))];
                                                         catch
                                                             try
-                                                                d_summary=out_resultsCombined{i1,i2,i3,i4,i5,i6,i7,i8,i9};
+                                                                d_summary=cell2mat(mat_outP6.out_resultsCombined(i1,i2,i3,i4,i5,i6,i7,i8,i9));
                                                             catch
                                                                 continue;
                                                             end
