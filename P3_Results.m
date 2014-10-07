@@ -23,8 +23,8 @@ else
 end  
 
 setup_batchSize=setup_nMC;
-setup_batchProc=18;
-setup_batchTrim=setup_nMC;
+setup_batchProc=50;
+setup_batchTrim=1;
 d_batchRef=[];
 
 for d_i=1:ceil(setup_nSim/setup_batchSize)
@@ -371,4 +371,5 @@ end
 %% Save output
 cd ..;
 
-toc
+d_procTime=toc
+mat_outP3.d_procTime=d_procTime;

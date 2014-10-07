@@ -24,7 +24,7 @@ ind_3_Group=unique(r_nZones);
 mat_outP6.out_resultsCombined=cell(1,1,1,1,1,1,1,1,2);
 
 setup_batchSize=setup_nMC;
-setup_batchProc=18;
+setup_batchProc=50;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
@@ -157,5 +157,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
 end
             
 cd ..;
-toc
+
+d_procTime=toc
+mat_outP6.d_procTime=d_procTime;
 
