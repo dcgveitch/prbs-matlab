@@ -146,14 +146,26 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     end
     
     d_bL=unique(d_batchList,'rows');
-    for d_i=1:size(d_bL)
-        try
-            d_in=cell2mat(mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9)));
-            mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))={[d_in; outB_resultsCombined{d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9)}]};
-        catch
-            mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
-        end
-    end
+    length(d_bL)
+    mat_outP6.outM_bL(1,d_batch)={d_bL};
+    mat_outP6.outM_resultsCombined(1,d_batch)={outB_resultsCombined};
+    
+%     for d_i=1:size(d_bL)
+%         try
+%            out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9), end+1)=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
+%         catch
+%            out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
+%         end
+%     end
+    
+%     d_bL=unique(d_batchList,'rows');
+%     for d_i=1:size(d_bL)
+%         try
+%            mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9), end+1)=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
+%         catch
+%             mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
+%         end
+%     end
     clear outB_* d_in;
 end
             
