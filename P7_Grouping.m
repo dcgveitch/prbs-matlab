@@ -17,6 +17,8 @@ end
 
 clear out_group out_summary out_summaryHist;
 
+cd P6
+
 for g1=1:nGroup(1)
     req_i{groupDims(1)}=group{1,1}(g1);
     for g2=1:nGroup(2)
@@ -38,11 +40,20 @@ for g1=1:nGroup(1)
                                             for i7=req_i{7}
                                                 for i8=req_i{8}
                                                     for i9=req_i{9}
-                                                        try                                                    
-                                                            d_summary=[d_summary; cell2mat(mat_outP6.out_resultsCombined(i1,i2,i3,i4,i5,i6,i7,i8,i9))];
+                                                        try
+                                                            filename=[num2str(i1) '_' num2str(i2) '_' num2str(i3) '_' num2str(i4) '_' num2str(i5) '_' num2str(i6) '_' num2str(i7) '_' num2str(i8) '_' num2str(i9) '.mat'];
+                                                            load(filename);
+                                                            d_inputError=cat(1,out_results{:,2});
+                                                            d_inputWeight=cat(1,out_results{:,1});
+                                                            d_inputWeight=d_inputWeight(:,5);
+                                                            if (i8==1 | i8==5), d_noise=1;
+                                                            else d_noise=100; end
+                                                            d_inputWeight=reshape(repmat(d_inputWeight,1,d_noise)',[],1);
+                                                            d_input=[d_inputError d_inputWeight];
+                                                            d_summary=[d_summary; d_input];
                                                         catch
                                                             try
-                                                                d_summary=cell2mat(mat_outP6.out_resultsCombined(i1,i2,i3,i4,i5,i6,i7,i8,i9));
+                                                                d_summary=d_input;
                                                             catch
                                                                 continue;
                                                             end
@@ -88,26 +99,28 @@ for g1=1:size(out_group,1)
                     out_summary(end,5)=g5;
                     
                     out_summary(end,6)=size(d_process,1);
-                    out_summary(end,8)=wmean(d_process(:,7),d_process(:,8));
-                    out_summary(end,7)=out_summary(end,8)-wstd(d_process(:,7),d_process(:,8));
-                    out_summary(end,9)=out_summary(end,8)+wstd(d_process(:,7),d_process(:,8));
-                    out_summary(end,10)=wprctile(d_process(:,7),5,d_process(:,8));
-                    out_summary(end,11)=wprctile(d_process(:,7),15.87,d_process(:,8));
-                    out_summary(end,12)=wprctile(d_process(:,7),25,d_process(:,8));
-                    out_summary(end,13)=wprctile(d_process(:,7),50,d_process(:,8));
-                    out_summary(end,14)=wprctile(d_process(:,7),75,d_process(:,8));
-                    out_summary(end,15)=wprctile(d_process(:,7),84.13,d_process(:,8));
-                    out_summary(end,16)=wprctile(d_process(:,7),95,d_process(:,8));
+                    out_summary(end,8)=wmean(d_process(:,1),d_process(:,2));
+                    out_summary(end,7)=out_summary(end,8)-wstd(d_process(:,1),d_process(:,2));
+                    out_summary(end,9)=out_summary(end,8)+wstd(d_process(:,1),d_process(:,2));
+                    out_summary(end,10)=wprctile(d_process(:,1),5,d_process(:,2));
+                    out_summary(end,11)=wprctile(d_process(:,1),15.87,d_process(:,2));
+                    out_summary(end,12)=wprctile(d_process(:,1),25,d_process(:,2));
+                    out_summary(end,13)=wprctile(d_process(:,1),50,d_process(:,2));
+                    out_summary(end,14)=wprctile(d_process(:,1),75,d_process(:,2));
+                    out_summary(end,15)=wprctile(d_process(:,1),84.13,d_process(:,2));
+                    out_summary(end,16)=wprctile(d_process(:,1),95,d_process(:,2));
                     if d_fig==4 
                         out_summary(end,17)=group4Val(g4)*group5Val(g5);
                         out_summary(end,18)=group4Val(g4)/group3Val(g3);
                     end
-                    [out_summaryHist{g1,g2,g3,g4}(:,1) out_summaryHist{g1,g2,g3,g4}(:,2)]=histwc(d_process(:,7),d_process(:,8),[-1:0.05:1]);
+                    [out_summaryHist{g1,g2,g3,g4}(:,1) out_summaryHist{g1,g2,g3,g4}(:,2)]=histwc(d_process(:,1),d_process(:,2),[-1:0.05:1]);
                 end
             end
         end
     end
 end
+
+cd ..
         
         
         

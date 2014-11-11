@@ -55,6 +55,8 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
 
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     d_batchList=[];
+    outB_resultsRef=[];
+    outB_resultsError=[];
     
     for ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
@@ -99,12 +101,6 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                 d_nNoise=size(d_flowProcess{1,1}{d_tSeqA,d_nSeqA}{d_impulse,d_conc},2)-2;
                                 d_ndt=size(d_flowProcess{1,1}{d_tSeqA,d_nSeqA}{d_impulse,d_conc},1);
 
-                                try
-                                    outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType};
-                                catch
-                                    outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType}=[];
-                                end
-
                                 d_flowTotal=zeros(d_ndt,1);
                                 % Total flow for airflow type
                                 for d_flow1=1:d_nFlow1
@@ -121,18 +117,10 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                         for d_flow2=1:d_nFlow2
                                             d_flowCount=(d_flow1-1)*d_nFlow2+d_flow2;                        
                                             d_flowProcessP=d_flowProcess{d_flow1,d_flow2}{d_tSeqA,d_nSeqA}{d_impulse,d_conc}';
-                                            d_resultsRaw=[];
 
-                                            % Individual raw results with references
-                                            d_resultsRaw(1:d_nNoise,1)=d_batchRun(ref_bPerm);
-                                            d_resultsRaw(1:d_nNoise,2)=d_flowCount;
-                                            d_resultsRaw(1:d_nNoise,3)=d_dt;
-                                            d_resultsRaw(1:d_nNoise,4)=1:d_nNoise;
-                                            d_resultsRaw(1:d_nNoise,5)=d_flowProcessP(2,d_dt);
-                                            d_resultsRaw(1:d_nNoise,6)=d_flowProcessP(3:end,d_dt);
-                                            d_resultsRaw(1:d_nNoise,7)=(d_flowProcessP(3:end,d_dt)-d_flowProcessP(2,d_dt))/d_flowProcessP(2,d_dt);
-                                            d_resultsRaw(1:d_nNoise,8)=abs(d_flowProcessP(2,d_dt))/d_flowTotal(d_dt)/d_ndt/d_nNoise;
-                                            outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType}(end+1:end+d_nNoise,1:8)=d_resultsRaw;
+                                            % Individual results
+                                            outB_resultsRef(end+1,:)=[d_batchRun(ref_bPerm) ind_1 ind_2 ind_3 d_solve d_impulse d_nSeqA d_tSeqA d_conc d_flowType d_flowCount d_dt d_flowProcessP(2,d_dt) abs(d_flowProcessP(2,d_dt))/d_flowTotal(d_dt)/d_ndt/d_nNoise];
+                                            outB_resultsError{end+1,1}=(d_flowProcessP(3:end,d_dt)-d_flowProcessP(2,d_dt))/d_flowProcessP(2,d_dt);
                                         end
                                     end
                                 end   
@@ -147,31 +135,13 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     if(~isempty(d_batchList))
         d_bL=unique(d_batchList,'rows');
         length(d_bL)
-        mat_outP6.outM_bL(1,d_batch)={d_bL};
-        mat_outP6.outM_resultsCombined(1,d_batch)={outB_resultsCombined};
-    end
-    
-%     for d_i=1:size(d_bL)
-%         try
-%            out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9), end+1)=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
-%         catch
-%            out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
-%         end
-%     end
-    
-%     d_bL=unique(d_batchList,'rows');
-%     for d_i=1:size(d_bL)
-%         try
-%            mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9), end+1)=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
-%         catch
-%             mat_outP6.out_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9))=outB_resultsCombined(d_bL(d_i,1), d_bL(d_i,2), d_bL(d_i,3), d_bL(d_i,4), d_bL(d_i,5), d_bL(d_i,6), d_bL(d_i,7), d_bL(d_i,8), d_bL(d_i,9));
-%         end
-%     end
-    clear outB_* d_in;
+        mat_outP6.outM_resultsRef(d_batch,1)={outB_resultsRef};
+        mat_outP6.outM_resultsError(d_batch,1)={outB_resultsError};
+    end   
 end
             
 cd ..;
 
 d_procTime=toc
-mat_outP6.d_procTime=d_procTime;
+save(strcat(d_folderTS(1:11), '__outP6.mat'),'d_procTime');
 
