@@ -53,6 +53,7 @@ for g1=1:nGroup(1)
                                                             d_inputWeight=cat(1,out_results{:,1});
                                                             d_inputWeight=d_inputWeight(:,5);
                                                             if (i8==1 | i8==5), d_noise=1;
+%                                                             if (i8==1 | i8==2), d_noise=1;
                                                             else d_noise=100; end
                                                             d_inputWeight=reshape(repmat(d_inputWeight,1,d_noise)',[],1);
                                                             d_input=[d_inputError d_inputWeight];
