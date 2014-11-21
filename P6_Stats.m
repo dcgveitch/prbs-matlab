@@ -12,6 +12,9 @@ else d_folderTS=d_folder(1:11); end
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
+mkdir('P6');
+cd P6;
+mat_outP6=matfile(strcat(d_folderTS(1:11), '__outP6.mat'),'Writable',true);
 
 d_reqTSeqA=[1 2];
 
@@ -31,8 +34,6 @@ for d_i=1:ceil(setup_nSim/setup_batchSize)
 end
 
 d_batchRef(d_batchRef>setup_nSim)=[];
-mkdir('P6');
-cd P6;
 
 for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     d_batchL=(d_batch-1)*setup_batchProc+1;
@@ -157,8 +158,10 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     
     clear outB_* d_in;
 end
-            
-cd ../..;
 
 d_procTime=toc
+mat_outP6.d_procTime=d_procTime;
+cd ../..;
+
+
 

@@ -11,8 +11,8 @@ else d_folderTS=d_folder(1:11); end
 
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
-mat_outP2=matfile(strcat(d_folderTS, '__outP2.mat'),'Writable',true);
-mat_outP3=matfile(strcat(d_folderTS, '__outP3.mat'),'Writable',true);
+mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
+mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
 
 setup_batchSize=setup_nMC;
 setup_batchProc=10;
