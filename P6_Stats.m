@@ -20,7 +20,7 @@ ind_2_Group=unique(r_seqPeriod);
 ind_3_Group=unique(r_nZones);
 
 setup_batchSize=setup_nMC;
-setup_batchProc=10;
+setup_batchProc=100;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 

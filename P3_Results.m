@@ -11,7 +11,6 @@ else d_folderTS=d_folder(1:11); end
 
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
-% mat_outP1=matfile(strcat(d_folderTS, '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS, '__outP2.mat'),'Writable',true);
 mat_outP3=matfile(strcat(d_folderTS, '__outP3.mat'),'Writable',true);
 
@@ -49,13 +48,12 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     
     rB_simFlow=mat_outP2.out_simFlow(1,d_batchRun);
     rB_simFlowTime=mat_outP2.out_simFlowTime(1,d_batchRun);
-%     rB_prbsFlow=mat_outP1.out_prbsFlow(1,d_batchRun);
     rB_simFlowTimeFull=mat_outP2.out_simFlowTimeFull(1,d_batchRun);
     rB_flow=mat_outP2.out_flow(1,d_batchRun);
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     
-    for ref_bPerm = 1:d_batchSize
+    parfor ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -64,11 +62,9 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_tZones=rB_tZones(ref_bPerm);
         clc_seqLength=rB_seqLength(ref_bPerm);
         clc_seqPeriod=rB_seqPeriod(ref_bPerm);
-        if ((clc_seqPeriod>6) || (clc_seqPeriod==4)); continue; end
         clc_seqMultiple=rB_seqMultiple(ref_bPerm);
         clc_stepSize=rB_stepSize(ref_bPerm);
-%         clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
-        clc_nSeqAverage=(12/clc_seqPeriod)-1;
+        clc_nSeqAverage=rB_nSeqAverage{ref_bPerm};
         clc_releaseRate=rB_releaseRate{ref_bPerm};
         clc_releaseRateT=rB_releaseRateT{ref_bPerm};
         clc_zoneVol=rB_zoneVol(ref_bPerm,:);
@@ -132,12 +128,6 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
             end
         end
 
-
-%         if (clc_afType=='S' || clc_afType=='F')
-%             clc_flowFullRef{1}{1}(:,1)=clc_simFlowTimeFull;
-%             clc_flowFullRef{1}{1}(:,2)=-sum(clc_prbsFlow,2);
-%         end
-
         %% Zone flow - Exfiltration
         for d_zone=1:clc_nZones
             for d_solve=d_reqSolve
@@ -180,10 +170,6 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                     end
                 end
             end
-%             if (clc_afType=='S' || clc_afType=='F')
-%                 clc_flowFullRef{2}{1,d_zone}(:,1)=clc_simFlowTimeFull;
-%                 clc_flowFullRef{2}{1,d_zone}(:,2)=-sum(clc_prbsFlow(:,(d_zone-1)*clc_nZones+1:d_zone*clc_nZones),2);
-%             end
         end
 
         %% Zone flow - Infiltration
@@ -242,16 +228,6 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                     end
                 end
             end
-
-%             if (clc_afType=='S' || clc_afType=='F')
-%                 clc_flowFullRef{2}{2,d_zone}(:,1)=clc_simFlowTimeFull;
-%                 clc_flowFullRef{2}{2,d_zone}(:,2)=-clc_prbsFlow(:,(d_zone-1)*clc_nZones+d_zone);
-%                 for d_k=1:clc_nZones
-%                     if (d_k~=d_zone) 
-%                         clc_flowFullRef{2}{2,d_zone}(:,2)=clc_flowFullRef{2}{1,d_zone}(:,2)-clc_prbsFlow(:,(d_k-1)*clc_nZones+d_zone);
-%                     end
-%                 end
-%             end
         end
 
         %% Individual flows
@@ -313,24 +289,10 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                         end
                     end
                 end
-
-%                 if (clc_afType=='S' || clc_afType=='F')
-%                     clc_flowFullRef{3}{d_zone1,d_zone2}(:,1)=clc_simFlowTimeFull;
-%                     if (d_zone1==d_zone2) % Zone exfiltration
-%                         clc_flowFullRef{3}{d_zone1,d_zone2}(:,2)=clc_flowFullRef{2}{1,d_zone2}(:,2);
-%                     elseif (d_zone1==clc_nZones+1) % Zone infiltration
-%                         clc_flowFullRef{3}{d_zone1,d_zone2}(:,2)=clc_flowFullRef{2}{2,d_zone2}(:,2);
-%                     else
-%                         clc_flowFullRef{3}{d_zone1,d_zone2}(:,2)=clc_prbsFlow(:,(d_zone1-1)*clc_nZones+d_zone2);
-%                     end
-%                 end
             end
         end
         
         outB_aFlowResults{ref_bPerm}=clc_flowResults;
-%         if (clc_afType=='S' || clc_afType=='F')
-%             outB_aFlowFullRef{ref_bPerm}=clc_flowFullRef;
-%         end
     end
     
     try

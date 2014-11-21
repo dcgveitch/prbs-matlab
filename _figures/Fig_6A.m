@@ -4,7 +4,6 @@ else d_folderTS=d_folder(1:11); end
 
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
-mat_outP6=matfile(strcat(d_folderTS(1:11), '__outP6.mat'),'Writable',true);
 
 nX=3;
 nY=1;
@@ -25,30 +24,47 @@ colours=pmkmp(6,'CubicL');
 groupDims=[9 2 1];
 
 % What's included in the summary
+d_fig=6;
 d_reqSeqLength=1:length(unique(r_seqLength));
 d_reqSeqPeriod=1:length(unique(r_seqPeriod));
-d_reqNZones=1:length(unique(r_nZones));
+d_reqNZones=1:3;
 d_reqSolve=[1];
 d_reqImp=[1];
 d_reqNSeqA=[1];
 d_reqTSeqA=[1];
-d_reqConc=[4];
+d_reqConc=[6];
 d_reqFlowType=[1 2 3];
 
-d_dir{1}='P6';
-d_figAve=1;
+% First thing to do is get the relevant data from the averaging approaches
+% So first example, 12hr total period so interested in 2, 3 & 6hr sequences
+% only
 
+d_figSeqA=12;
+
+switch d_figSeqA
+    case 12
+        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6);
+        d_dir{1}='P6_';
+        d_dir{2}='P6_A1';
+end
+
+for d_figAve=1:2
+    disp(['Summarirsing ' num2str(d_figAve) '/2'])
+    P7_Grouping;
+    out_figSummary{d_figAve}=out_summary;
+%     out_figSummaryHist{d_figAve}=out_summaryHist;
+end
+    
 % For breaking it down again by nZones
-for d_test=1:1
+for d_figAve=1:2
     figOut=figure;
     set(figOut,'Units','centimeters');
     set(figOut,'Position', [5, 5, 17, 7]);
     set(figOut,'Units','pixels');
-    set(gcf,'Renderer','Painters');
-    P7_Grouping; 
-    
-    for d_i=1:3        
-        d_summary=out_summary(find(out_summary(:,1)==d_i),:);
+
+    set(gcf,'Renderer','Painters'); 
+    for d_i=1:3 % For different airflow categories
+        d_summary=out_figSummary{d_figAve}(find(out_figSummary{d_figAve}(:,1)==d_i),:);
         flowStats=d_summary(:,11:15)'*100;
         nTotal=sum(d_summary(:,6));
         grouping1=d_summary(:,3)';
@@ -114,11 +130,8 @@ for d_test=1:1
           'YGrid'       , 'on'          , ...
           'YTick'       , -100:20:100   , ...
           'Layer'       , 'top');
-
-      fileSaveName=['Conc' num2str(d_test) '_flow' num2str(d_i) '.xlsx'];
-      csvwrite(fileSaveName,d_summary);
     end
-    fileSaveName=['Zone_' num2str(d_test) '.pdf'];
+    fileSaveName=['Ave_' num2str(d_figAve) '.pdf'];
     export_fig('filename', fileSaveName, '-nocrop');
     close(gcf);
 end
