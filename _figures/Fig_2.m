@@ -1,3 +1,5 @@
+%% Overlapping nature of cross correlation impulses
+%% Use with data from '3_1_140922T1601_Impulses'
 
 seqdT=30/3600;
 seqLength=12;

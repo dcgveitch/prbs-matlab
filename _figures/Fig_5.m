@@ -1,3 +1,6 @@
+%% Plot example variable flows at different aggregation levels
+%% Not too sure where the base data comes from??
+
 for perm=4
     clear d_*;
     d_nZones=2;
@@ -11,9 +14,6 @@ for perm=4
     sizeXPad=0;
     sizeYPad=0;
 
-%     for i=1:length(nX)
-%         sizeXM(i)=(sizeXTotal-(nX(i)-1)*sizeXPad)/nX(i); 
-%     end
     sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX; 
     sizeYM(1:4)=(sizeYTotal-(nY-1)*sizeYPad)/nY;
     sizeYM(1)=sizeYM(1)*1.5;

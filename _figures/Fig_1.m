@@ -1,3 +1,6 @@
+%% Errors in discretised impulse response.
+%% Use with data from '3_1_140922T1601_Impulses'
+
 clear d_*
 
 nX=1;
