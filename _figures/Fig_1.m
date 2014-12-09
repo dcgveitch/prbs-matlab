@@ -16,7 +16,7 @@ sizeYPad=0.02;
 sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX;
 sizeYM=(sizeYTotal-(nY-1)*sizeYPad)/nY;
 
-colours=pmkmp(10,'CubicL');
+colours=pmkmp(5,'CubicL');
 
 figOut=figure;
 set(figOut,'Units','centimeters');
@@ -28,11 +28,14 @@ set(gcf,'Renderer','Painters');
 for d_i=1:length(out_prbsCrossCorr)
     crossCorr{d_i}=out_prbsCrossCorr{d_i}(:,:,1);
 end
-yScale=1/max(crossCorr{2}(:,1));
+% crossCorr{11}=testT;
+yScale=1/max(crossCorr{10}(:,1));
+% crossCorr{11}=(crossCorr{11}./max(crossCorr{11}(:,1))).*max(crossCorr{2}(:,1))*2.5;
 
 handAxesM(1)=axes('color','none');
 d_count2=1;
-for d_i=[2 3 4 5 6 8 10]
+for d_i=[6 7 8 9 10]
+    d_p(d_count2)=plot((1/length(crossCorr{d_i}(:,1)))/2:1/length(crossCorr{d_i}(:,1)):1,crossCorr{d_i}(:,1)*yScale,'color',colours(d_i-5,:));
     error{d_i}=[];
     for d_flowType=1:3
         d_data=out_aFlowResults{1, d_i}{1, d_flowType};
@@ -45,7 +48,6 @@ for d_i=[2 3 4 5 6 8 10]
         end
     d_errorSum(d_count2,d_flowType)=mean(nonzeros(d_error{d_i}(:,d_flowType)));
     end
-    d_p(d_count2)=plot(1/length(crossCorr{d_i}(:,1)):1/length(crossCorr{d_i}(:,1)):1,crossCorr{d_i}(:,1)*yScale,'color',colours(d_i,:));
     switch d_i
         case 2
             d_multipliers{d_count2}=['x1   (' num2str(d_errorSum(d_count2,3)*100,'%0.1f') ')'];
@@ -66,6 +68,7 @@ for d_i=[2 3 4 5 6 8 10]
     hold on
     d_count2=d_count2+1;    
 end
+
 set(handAxesM(1),'Position', [sizeXMOff 1-(sizeYMOff+(sizeYM+sizeYPad)) sizeXM sizeYM], 'color', 'none');
 set(gca, 'layer', 'top');
 
