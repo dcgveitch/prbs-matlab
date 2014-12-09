@@ -11,21 +11,21 @@ d_reqImp=[1 2];
 mat_testCell=matfile('TestCell.mat');
 
 %% Test Description
-clc_nZones=2;
-clc_seqLength=15;
-clc_seqPeriod=2;
-clc_seqMultiple=16;
-clc_releaseRate=[1 1];
-clc_zoneVol=[2.492 5.314];
-clc_sensorResp=60;
-
 sens_results=mat_testCell.T141023;
 sens_concZ=[];
 sens_ext=sens_results.ext;
-sens_concZ{1}=sens_results.z1-mean(sens_ext);
-sens_concZ{2}=sens_results.z2-mean(sens_ext);
+sens_concZ{1}=sens_results.z1;
+sens_concZ{2}=sens_results.z2;
 sens_nZ1=size(sens_concZ{1},2);
 sens_nZ2=size(sens_concZ{2},2);
+
+clc_nZones=sens_results.nZones;
+clc_seqLength=sens_results.seqLength;
+clc_seqPeriod=sens_results.seqPeriod;
+clc_seqMultiple=sens_results.seqMultiple;
+clc_releaseRate=[1 1];
+clc_zoneVol=[2.492 5.314];
+clc_sensorResp=60;
 
 % Derived variables
 clc_cSeqLength=clc_seqLength*clc_seqMultiple;
@@ -132,7 +132,7 @@ for d_z1=1:sens_nZ1
             if (ismember(1,d_reqImp) || ismember(2,d_reqImp))
                 for d_relZone=1:clc_nZones
                     for d_concZone=1:clc_nZones
-                        clc_crossCorrOutput = sens_conc(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+1)*clc_cSeqLength,d_concZone)/1000000;
+                        clc_crossCorrOutput = (sens_conc(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+1)*clc_cSeqLength,d_concZone)-mean(sens_ext(((d_seqV-1)*clc_cSeqLength)+1:(d_seqV+1)*clc_cSeqLength)))/1000000;
                         clc_concMean = mean(clc_crossCorrOutput);
                         clc_gain = clc_concMean/(clc_releaseRate(d_relZone)/2);
                         clc_crossCorrOutput = clc_crossCorrOutput-clc_concMean;
@@ -168,10 +168,11 @@ for d_z1=1:sens_nZ1
                 cll_dt=clc_dth;
 
                 % Calculate flowrates
+                cll_trim=0;
 
                 cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
-                cll_sumStart = clc_seqMultiple+1+5;
-                cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                cll_sumStart = clc_seqMultiple+1+cll_trim;
+                cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1-cll_trim;
                 cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
 
                 for d_relZone=1:clc_nZones
@@ -202,8 +203,8 @@ for d_z1=1:sens_nZ1
                 if (ismember(2,d_reqSolve) || ismember(3,d_reqSolve) || ismember(4,d_reqSolve) || ismember(5,d_reqSolve))
                     % Prepare inputs for additional solvers
                     cll_crossCorrCalc=reshape(permute(clc_crossCorr{d_imp}(1:floor(clc_seqLength/clc_nZones)*clc_seqMultiple,:,:,d_seqV),[1 3 2]),floor(clc_seqLength/clc_nZones)*clc_seqMultiple,clc_nZones^2);
-                    cll_sumStart = clc_seqMultiple+1+5;
-                    cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                    cll_sumStart = clc_seqMultiple+1+cll_trim;
+                    cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1-cll_trim;
                     cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:);
 
                     clc_impAve = (cll_crossCorrCalc(1:end-1,:)+cll_crossCorrCalc(2:end,:))*1000/2;
