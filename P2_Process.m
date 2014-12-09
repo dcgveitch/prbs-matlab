@@ -14,9 +14,9 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
-% d_reqSolve=[1 4 5];
-% d_reqImp=[2];
-% d_reqConc=[1 6];
+d_reqSolve=[1];
+d_reqImp=[1];
+d_reqConc=[1];
 
 save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*', '-append')
 
@@ -31,12 +31,14 @@ for d_i=1:ceil(setup_nSim/setup_batchSize)
     end
 end
 
-for d_batch=16:ceil(length(d_batchRef)/setup_batchProc)
+for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     d_batchL=(d_batch-1)*setup_batchProc+1;
     d_batchH=min(d_batchL+setup_batchProc-1,length(d_batchRef));
     d_batchRun=d_batchRef(d_batchL:d_batchH);
+    % Single run override
+    % d_batchRun=1;
     d_batchSize=length(d_batchRun);
-    
+ 
     rB_nZones=r_nZones(d_batchRun);
     rB_nDays=r_nDays(d_batchRun);
     rB_tZones=r_tZones(d_batchRun);
@@ -59,7 +61,7 @@ for d_batch=16:ceil(length(d_batchRef)/setup_batchProc)
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     
-    parfor ref_bPerm = 1:d_batchSize
+    for ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -317,9 +319,9 @@ for d_batch=16:ceil(length(d_batchRef)/setup_batchProc)
                                 clc_crossCorr{1}(:,d_relZone,d_concZone,d_seqV)=((clc_seqLength*d_crossCorr)+(clc_a2(d_relZone)*clc_gain))/((clc_seqLength+1)*clc_dth*clc_seqMultiple*clc_a2(d_relZone));
                             end
                         end
+                        outB_prbsCrossCorr{ref_bPerm}=clc_crossCorr{1};
                     end
                     
-
                     if (ismember(2,d_reqImp))
                         for d_relZone=1:clc_nZones
                             for d_concZone=1:clc_nZones
@@ -355,10 +357,26 @@ for d_batch=16:ceil(length(d_batchRef)/setup_batchProc)
                             cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                             cll_sumStart = 1;
                             cll_sumEnd = size(cll_crossCorrCalc,1);
+                            d_maxOut=size(cll_crossCorrCalc,1);
+                            for d_i=1:size(cll_crossCorrCalc,2)
+                                for d_j=1:size(cll_crossCorrCalc,3)
+                                    d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
+                                    if d_max<d_maxOut, d_maxOut=d_max; end
+                                end
+                            end
+                            cll_sumEnd=min(d_maxOut,cll_sumEnd);
                         else
                             cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                             cll_sumStart = clc_seqMultiple+1;
                             cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                            d_maxOut=size(cll_crossCorrCalc,1);
+                            for d_i=1:size(cll_crossCorrCalc,2)
+                                for d_j=1:size(cll_crossCorrCalc,3)
+                                    d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
+                                    if d_max<d_maxOut, d_maxOut=d_max; end
+                                end
+                            end
+                            cll_sumEnd=min(d_maxOut,cll_sumEnd);
                         end
                         cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
 
@@ -723,6 +741,7 @@ for d_batch=16:ceil(length(d_batchRef)/setup_batchProc)
     end
        
     mat_outP2.out_prbsConcDisc(1,d_batchRun)=outB_prbsConcDisc;
+    mat_outP2.out_prbsCrossCorr(1,d_batchRun)=outB_prbsCrossCorr;
     mat_outP2.out_simFlowTimeFull(1,d_batchRun)=outB_simFlowTimeFull;
     mat_outP2.out_simFlowTime(1,d_batchRun)=outB_simFlowTime;
     mat_outP2.out_simFlow(1,d_batchRun)=outB_simFlow;    
