@@ -24,7 +24,9 @@ clc_seqLength=sens_results.seqLength;
 clc_seqPeriod=sens_results.seqPeriod;
 clc_seqMultiple=sens_results.seqMultiple;
 clc_releaseRate=[1 1];
-clc_zoneVol=[2.492 5.314];
+clc_zoneVol(1:2)=[2.492 5.314];
+clc_zoneVolGain=zeros(1,8);
+clc_zoneVolGain(1:2)=1./clc_zoneVol;
 clc_sensorResp=60;
 
 % Derived variables
@@ -35,7 +37,6 @@ clc_ndt = clc_nSeq * clc_seqLength * clc_seqMultiple;
 clc_dt = clc_seqPeriod*60*60/(clc_seqLength*clc_seqMultiple); % Seconds
 clc_dth = clc_seqPeriod/(clc_seqLength*clc_seqMultiple); % Hours
 
-clc_zoneVolGain=1./clc_zoneVol;
 clc_nSeqAverage=1;
 
 clc_flow=[];
@@ -123,12 +124,12 @@ clc_crossCorr=[];
 % Calculate cross correlations and flows for all sequence positions required
 d_seqA=1;
 
-for d_z1=1:sens_nZ1
-    for d_z2=1:sens_nZ2
+for d_z1=1:1
+    for d_z2=1:1
         sens_conc=[sens_concZ{1}(:,d_z1) sens_concZ{2}(:,d_z2)];
         sens_comb=(d_z1-1)*sens_nZ1+d_z2;
 
-        for d_seqV=1:4
+        for d_seqV=1:1
             if (ismember(1,d_reqImp) || ismember(2,d_reqImp))
                 for d_relZone=1:clc_nZones
                     for d_concZone=1:clc_nZones
@@ -159,382 +160,229 @@ for d_z1=1:sens_nZ1
 
 
             for d_imp=d_reqImp
-                cll_crossCorrSum=[];
-                cll_D=[];
-                cll_E=[];
-                cll_X=[];
-                cll_Xach=[];
-                cll_Xflow=[];
-                cll_dt=clc_dth;
-
                 % Calculate flowrates
-                cll_trim=0;
+                for cll_trim=0:40
+                    cll_crossCorrSum=[];
+                    cll_D=[];
+                    cll_E=[];
+                    cll_X=[];
+                    cll_Xach=[];
+                    cll_Xflow=[];
+                    cll_dt=clc_dth;
 
-                cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
-                cll_sumStart = clc_seqMultiple+1+cll_trim;
-                cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1-cll_trim;
-                cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
-
-                for d_relZone=1:clc_nZones
-                    for d_concZone=1:clc_nZones
-                        cll_crossCorrSum(:,d_relZone,d_concZone,1)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)-cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
-                        cll_crossCorrSum(:,d_relZone,d_concZone,2)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)+cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
-                    end
-                end
-
-                for d_zone=1:clc_nZones
-                    for d_i=1:clc_nZones
-                        for d_j=1:clc_nZones
-                            cll_D(d_i,d_j,d_zone)=sum(cll_crossCorrSum(:,d_i,d_j,2).*cll_crossCorrSum(:,d_i,d_zone,2));
-                        end
-                        cll_E(d_i,d_zone)=sum(cll_crossCorrSum(:,d_i,d_zone,1).*cll_crossCorrSum(:,d_i,d_zone,2));
-                    end
-                    cll_X(:,d_zone)=cll_D(:,:,d_zone)\cll_E(:,d_zone);
-                    cll_Xach(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt;
-                    cll_Xflow(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt*clc_zoneVol(d_zone);
-                end
-
-
-
-                for d_i=1:clc_nZones
-                    clc_flow{sens_comb,1}{d_imp}{1,d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones)=cll_Xflow(d_i,:);    
-                end
-
-                if (ismember(2,d_reqSolve) || ismember(3,d_reqSolve) || ismember(4,d_reqSolve) || ismember(5,d_reqSolve))
-                    % Prepare inputs for additional solvers
-                    cll_crossCorrCalc=reshape(permute(clc_crossCorr{d_imp}(1:floor(clc_seqLength/clc_nZones)*clc_seqMultiple,:,:,d_seqV),[1 3 2]),floor(clc_seqLength/clc_nZones)*clc_seqMultiple,clc_nZones^2);
+                    cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                     cll_sumStart = clc_seqMultiple+1+cll_trim;
-                    cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1-cll_trim;
-                    cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:);
+                    cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                    cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
 
-                    clc_impAve = (cll_crossCorrCalc(1:end-1,:)+cll_crossCorrCalc(2:end,:))*1000/2;
-                    clc_impdt = (cll_crossCorrCalc(2:end,:)-cll_crossCorrCalc(1:end-1,:))*1000/clc_dth;
+                    for d_relZone=1:clc_nZones
+                        for d_concZone=1:clc_nZones
+                            cll_crossCorrSum(:,d_relZone,d_concZone,1)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)-cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
+                            cll_crossCorrSum(:,d_relZone,d_concZone,2)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)+cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
+                        end
+                    end
 
-                    if (ismember(2,d_reqSolve))
-                        % Non-linear least squares - SPLIT EQUATIONS      
-                        d_flowSort=[];
-                        for d_zone=1:clc_nZones
-                            x0=ones(clc_nZones,1)*100;
-                            lb=zeros(clc_nZones,1);
-                            ub=ones(clc_nZones,1)*500;
-                            f=@(x)vecObj_Split(x,d_zone,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
+                    for d_zone=1:clc_nZones
+                        for d_i=1:clc_nZones
+                            for d_j=1:clc_nZones
+                                cll_D(d_i,d_j,d_zone)=sum(cll_crossCorrSum(:,d_i,d_j,2).*cll_crossCorrSum(:,d_i,d_zone,2));
+                            end
+                            cll_E(d_i,d_zone)=sum(cll_crossCorrSum(:,d_i,d_zone,1).*cll_crossCorrSum(:,d_i,d_zone,2));
+                        end
+                        cll_X(:,d_zone)=cll_D(:,:,d_zone)\cll_E(:,d_zone);
+                        cll_Xach(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt;
+                        cll_Xflow(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt*clc_zoneVol(d_zone);
+                    end
+
+
+
+                    for d_i=1:clc_nZones
+                        clc_flow{sens_comb,1}{d_imp}{1,d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones)=cll_Xflow(d_i,:);    
+                    end
+
+                    if (ismember(2,d_reqSolve) || ismember(3,d_reqSolve) || ismember(4,d_reqSolve) || ismember(5,d_reqSolve))
+                        % Prepare inputs for additional solvers
+                        cll_crossCorrCalc=reshape(permute(clc_crossCorr{d_imp}(1:floor(clc_seqLength/clc_nZones)*clc_seqMultiple,:,:,d_seqV),[1 3 2]),floor(clc_seqLength/clc_nZones)*clc_seqMultiple,clc_nZones^2);
+                        cll_sumStart = clc_seqMultiple+1+cll_trim;
+                        cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
+                        cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:);
+
+                        clc_impAve = (cll_crossCorrCalc(1:end-1,:)+cll_crossCorrCalc(2:end,:))*1000/2;
+                        clc_impdt = (cll_crossCorrCalc(2:end,:)-cll_crossCorrCalc(1:end-1,:))*1000/clc_dth;
+
+                        if (ismember(2,d_reqSolve))
+                            % Non-linear least squares - SPLIT EQUATIONS      
+                            d_flowSort=[];
+                            for d_zone=1:clc_nZones
+                                x0=ones(clc_nZones,1)*100;
+                                lb=zeros(clc_nZones,1);
+                                ub=ones(clc_nZones,1)*500;
+                                f=@(x)vecObj_Split(x,d_zone,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
+                                opts = optimoptions(@lsqnonlin,'Display', 'off');
+                                d_flow=lsqnonlin(f,x0,lb,ub,opts)';
+                                d_flow(d_zone)=-d_flow(d_zone);
+                                d_flowSort(d_zone,:)=d_flow;
+                            end
+                            clc_flow{sens_comb,2}{d_imp}{1,d_seqA}(d_seqV,:)=reshape(d_flowSort,clc_nZones^2,1);
+                        end
+
+                        if (ismember(4,d_reqSolve))
+                            % Linear least squares - SPLIT EQUATIONS      
+                            d_flowSort=[];
+                            for d_zone=1:clc_nZones
+                                % Prepare matrices
+                                Ccell=cell(clc_nZones,clc_nZones);
+                                Ccell(:,:)={zeros(length(clc_impAve(:,1)),1)};
+                                Dcell=cell(clc_nZones,1);
+                                Dcell(:,:)={zeros(length(clc_impAve(:,1)),1)};
+
+                                for i=1:clc_nZones
+                                    Ccell{i,d_zone}=-clc_impAve(:,(i-1)*clc_nZones+d_zone)/clc_zoneVol(d_zone);
+                                    for k=1:clc_nZones
+                                        if (k~=d_zone)
+                                            Ccell{i,k}=clc_impAve(:,(i-1)*clc_nZones+k)/clc_zoneVol(d_zone);
+                                        end
+                                    end
+                                    Dcell{i,1}=clc_impdt(:,(i-1)*clc_nZones+d_zone);
+                                end
+
+                                C=cell2mat(Ccell);
+                                D=cell2mat(Dcell);   
+                                opts = optimset('Display', 'off');
+                                d_flow=lsqnonneg(C,D,opts)';
+                                d_flow(d_zone)=-d_flow(d_zone);
+                                d_flowSort(d_zone,:)=d_flow;
+                            end
+                            clc_flow{sens_comb,4}{d_imp}{1,d_seqA}(d_seqV,:)=reshape(d_flowSort,clc_nZones^2,1);
+                        end
+
+                        if (ismember(3,d_reqSolve))
+                            % Non-linear least squares - SINGLE EQUATION
+                            d_flowSort=[];
+                            x0=ones(clc_nZones*(clc_nZones+1),1)*100;
+                            lb=zeros(clc_nZones*(clc_nZones+1),1);
+                            ub=ones(clc_nZones*(clc_nZones+1),1)*500;
+                            f=@(x)vecObj(x,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
                             opts = optimoptions(@lsqnonlin,'Display', 'off');
                             d_flow=lsqnonlin(f,x0,lb,ub,opts)';
-                            d_flow(d_zone)=-d_flow(d_zone);
-                            d_flowSort(d_zone,:)=d_flow;
+                            d_flowSort=d_flow(clc_nZones+1:end);
+                            for d_i=1:clc_nZones
+                                d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
+                            end
+                            clc_flow{sens_comb,3}{d_imp}{1,d_seqA}(d_seqV,:)=d_flowSort;
                         end
-                        clc_flow{sens_comb,2}{d_imp}{1,d_seqA}(d_seqV,:)=reshape(d_flowSort,clc_nZones^2,1);
-                    end
 
-                    if (ismember(4,d_reqSolve))
-                        % Linear least squares - SPLIT EQUATIONS      
-                        d_flowSort=[];
-                        for d_zone=1:clc_nZones
+                        if (ismember(5,d_reqSolve))
+                            % Linear least squares - SINGLE EQUATION
+                            d_flowSort=[];
+
                             % Prepare matrices
-                            Ccell=cell(clc_nZones,clc_nZones);
+                            Ccell=cell(clc_nZones^2,clc_nZones^2);
                             Ccell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-                            Dcell=cell(clc_nZones,1);
+                            Dcell=cell(clc_nZones^2,1);
                             Dcell(:,:)={zeros(length(clc_impAve(:,1)),1)};
 
                             for i=1:clc_nZones
-                                Ccell{i,d_zone}=-clc_impAve(:,(i-1)*clc_nZones+d_zone)/clc_zoneVol(d_zone);
-                                for k=1:clc_nZones
-                                    if (k~=d_zone)
-                                        Ccell{i,k}=clc_impAve(:,(i-1)*clc_nZones+k)/clc_zoneVol(d_zone);
-                                    end
+                                for j=1:clc_nZones
+                                        Ccell((i-1)*clc_nZones+j,(i-1)*clc_nZones+1:i*clc_nZones)={-clc_impAve(:,(j-1)*clc_nZones+i)/clc_zoneVol(i)};
+                                        Dcell{(i-1)*clc_nZones+j,1}=clc_impdt(:,(j-1)*clc_nZones+i);
+                                        for k=1:clc_nZones
+                                            if (k~=i)
+                                                Ccell{(i-1)*clc_nZones+j,(k-1)*clc_nZones+i}=clc_impAve(:,(j-1)*clc_nZones+k)/clc_zoneVol(i);
+                                            end
+                                        end
                                 end
-                                Dcell{i,1}=clc_impdt(:,(i-1)*clc_nZones+d_zone);
                             end
 
                             C=cell2mat(Ccell);
-                            D=cell2mat(Dcell);   
-                            opts = optimset('Display', 'off');
-                            d_flow=lsqnonneg(C,D,opts)';
-                            d_flow(d_zone)=-d_flow(d_zone);
-                            d_flowSort(d_zone,:)=d_flow;
-                        end
-                        clc_flow{sens_comb,4}{d_imp}{1,d_seqA}(d_seqV,:)=reshape(d_flowSort,clc_nZones^2,1);
-                    end
+                            D=cell2mat(Dcell);
 
-                    if (ismember(3,d_reqSolve))
-                        % Non-linear least squares - SINGLE EQUATION
-                        d_flowSort=[];
-                        x0=ones(clc_nZones*(clc_nZones+1),1)*100;
-                        lb=zeros(clc_nZones*(clc_nZones+1),1);
-                        ub=ones(clc_nZones*(clc_nZones+1),1)*500;
-                        f=@(x)vecObj(x,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
-                        opts = optimoptions(@lsqnonlin,'Display', 'off');
-                        d_flow=lsqnonlin(f,x0,lb,ub,opts)';
-                        d_flowSort=d_flow(clc_nZones+1:end);
-                        for d_i=1:clc_nZones
-                            d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
-                        end
-                        clc_flow{sens_comb,3}{d_imp}{1,d_seqA}(d_seqV,:)=d_flowSort;
-                    end
+                            C=[zeros(size(C,1),clc_nZones) C];
+                            D=[D; zeros(clc_nZones,1)];
 
-                    if (ismember(5,d_reqSolve))
-                        % Linear least squares - SINGLE EQUATION
-                        d_flowSort=[];
+                            Cext=zeros(clc_nZones,clc_nZones*(clc_nZones+1));
 
-                        % Prepare matrices
-                        Ccell=cell(clc_nZones^2,clc_nZones^2);
-                        Ccell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-                        Dcell=cell(clc_nZones^2,1);
-                        Dcell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-
-                        for i=1:clc_nZones
-                            for j=1:clc_nZones
-                                    Ccell((i-1)*clc_nZones+j,(i-1)*clc_nZones+1:i*clc_nZones)={-clc_impAve(:,(j-1)*clc_nZones+i)/clc_zoneVol(i)};
-                                    Dcell{(i-1)*clc_nZones+j,1}=clc_impdt(:,(j-1)*clc_nZones+i);
-                                    for k=1:clc_nZones
-                                        if (k~=i)
-                                            Ccell{(i-1)*clc_nZones+j,(k-1)*clc_nZones+i}=clc_impAve(:,(j-1)*clc_nZones+k)/clc_zoneVol(i);
-                                        end
+                            for i=1:clc_nZones
+                                Cext(i,i)=-1;
+                                Cext(i,i*clc_nZones+1:(i+1)*clc_nZones)=1;
+                                for j=1:clc_nZones
+                                    if (j~=i)
+                                        Cext(i,j*clc_nZones+i)=-1;
                                     end
-                            end
-                        end
-
-                        C=cell2mat(Ccell);
-                        D=cell2mat(Dcell);
-
-                        C=[zeros(size(C,1),clc_nZones) C];
-                        D=[D; zeros(clc_nZones,1)];
-
-                        Cext=zeros(clc_nZones,clc_nZones*(clc_nZones+1));
-
-                        for i=1:clc_nZones
-                            Cext(i,i)=-1;
-                            Cext(i,i*clc_nZones+1:(i+1)*clc_nZones)=1;
-                            for j=1:clc_nZones
-                                if (j~=i)
-                                    Cext(i,j*clc_nZones+i)=-1;
                                 end
                             end
-                        end
 
-                        C=[C; Cext];      
+                            C=[C; Cext];      
 
-                        opts = optimset('Display', 'off');
-                        d_flow=lsqnonneg(C,D,opts)';
-                        d_flowSort=d_flow(clc_nZones+1:end);
-                        for d_i=1:clc_nZones
-                            d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
+                            opts = optimset('Display', 'off');
+                            d_flow=lsqnonneg(C,D,opts)';
+                            d_flowSort=d_flow(clc_nZones+1:end);
+                            for d_i=1:clc_nZones
+                                d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
+                            end
+                            clc_flow{sens_comb,5}{d_imp}{1,d_seqA}(d_seqV,:)=d_flowSort;
                         end
-                        clc_flow{sens_comb,5}{d_imp}{1,d_seqA}(d_seqV,:)=d_flowSort;
                     end
-
+                    if (d_imp==2) test_trim(cll_trim+1,:)=clc_flow{1,5}{2}{1,1}(1,:); end
                 end
             end
         end
     end
 end
 
+%% Direct impulse simulation
+clc_flowTest=clc_flow{1,5}{2}{1,1}(1,:);
+clc_crossCorrTest=[squeeze(clc_crossCorr{2}(:,1,[1 2],1)) squeeze(clc_crossCorr{2}(:,2,[2 1],1))];
 
+setup_nModelZones=8;
+clc_tZones=2;
+clc_stepSize=1/3600; % 1 second
 
-% 
-% for d_seqA=clc_nSeqAverage(1:end)
-%     %%%
-%     if (clc_afType=='S' || clc_afType=='F')
-%         d_seqVlim=clc_nRunSeq-d_seqA;
-%     else
-%         d_seqVlim=1;
-%     end
-%     for d_seqV=1:d_seqVlim
-%         %%%
-%         d_reqImpA=d_reqImp;
-%         d_reqImpA(d_reqImpA==3)=[];
-%         for d_imp=d_reqImpA
-%             %%%
-%             % Calculate averaged flows through combining results
-%             for d_solve=d_reqSolve
-%                 clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA}(d_seqV,:,d_noise)=mean(clc_flow{d_solve}{d_imp,d_conc}{1,1}(d_seqV:2:d_seqV+d_seqA-1,:,d_noise),1);
-%             end
-% 
-%             % Calculate averaged flows through combining inputs
-%             clc_crossCorrA=[];
-%             for d_relZone=1:clc_nZones
-%                 for d_concZone=1:clc_nZones
-%                     clc_crossCorrA(:,d_relZone,d_concZone)=mean(clc_crossCorr{d_imp}(:,d_relZone,d_concZone,d_seqV:d_seqV+d_seqA-1),4);
-%                 end
-%             end
-% 
-%             cll_crossCorrSum=[];
-%             cll_D=[];
-%             cll_E=[];
-%             cll_X=[];
-%             cll_Xach=[];
-%             cll_Xflow=[];
-%             cll_dt=clc_dth;
-% 
-%             % Calculate flowrates
-%             cll_crossCorrCalc=clc_crossCorrA(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:);
-%             cll_sumStart = clc_seqMultiple+1;
-%             cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
-%             cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
-% 
-%             for d_relZone=1:clc_nZones
-%                 for d_concZone=1:clc_nZones
-%                     cll_crossCorrSum(:,d_relZone,d_concZone,1)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)-cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
-%                     cll_crossCorrSum(:,d_relZone,d_concZone,2)=cll_crossCorrCalc(2:end,d_relZone,d_concZone)+cll_crossCorrCalc(1:end-1,d_relZone,d_concZone);
-%                 end
-%             end
-% 
-%             for d_zone=1:clc_nZones
-%                 for d_i=1:clc_nZones
-%                     for d_j=1:clc_nZones
-%                         cll_D(d_i,d_j,d_zone)=sum(cll_crossCorrSum(:,d_i,d_j,2).*cll_crossCorrSum(:,d_i,d_zone,2));
-%                     end
-%                     cll_E(d_i,d_zone)=sum(cll_crossCorrSum(:,d_i,d_zone,1).*cll_crossCorrSum(:,d_i,d_zone,2));
-%                 end
-%                 cll_X(:,d_zone)=cll_D(:,:,d_zone)\cll_E(:,d_zone);
-%                 cll_Xach(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt;
-%                 cll_Xflow(:,d_zone)=(cll_D(:,:,d_zone)\cll_E(:,d_zone))*2/cll_dt*clc_zoneVol(d_zone);
-%             end
-% 
-%             for d_i=1:clc_nZones
-%                 clc_flow{1}{d_imp,d_conc}{2,d_seqA}(d_seqV,(d_i-1)*clc_nZones+1:d_i*clc_nZones,d_noise)=cll_Xflow(d_i,:);    
-%             end
-% 
-%             % Additional solvers
-%             if (ismember(2,d_reqSolve) || ismember(3,d_reqSolve) || ismember(4,d_reqSolve) || ismember(5,d_reqSolve))
-%                 % Prepare inputs for additional solvers
-%                 cll_crossCorrCalc=reshape(permute(clc_crossCorrA(1:floor(clc_seqLength/clc_nZones)*clc_seqMultiple,:,:),[1 3 2]),floor(clc_seqLength/clc_nZones)*clc_seqMultiple,clc_nZones^2);
-%                 cll_sumStart = clc_seqMultiple+1;
-%                 cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
-%                 cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:);
-% 
-%                 clc_impAve = (cll_crossCorrCalc(1:end-1,:)+cll_crossCorrCalc(2:end,:))*1000/2;
-%                 clc_impdt = (cll_crossCorrCalc(2:end,:)-cll_crossCorrCalc(1:end-1,:))*1000/clc_dth;
-% 
-%                 if (ismember(2,d_reqSolve))
-%                     % Non-linear least squares - SPLIT EQUATIONS      
-%                     d_flowSort=[];
-%                     for d_zone=1:clc_nZones
-%                         x0=ones(clc_nZones,1)*100;
-%                         lb=zeros(clc_nZones,1);
-%                         ub=ones(clc_nZones,1)*500;
-%                         f=@(x)vecObj_Split(x,d_zone,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
-%                         opts = optimoptions(@lsqnonlin,'Display', 'off');
-%                         d_flow=lsqnonlin(f,x0,lb,ub,opts)';
-%                         d_flow(d_zone)=-d_flow(d_zone);
-%                         d_flowSort(d_zone,:)=d_flow;
-%                     end
-%                     clc_flow{2}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=reshape(d_flowSort,clc_nZones^2,1);
-%                 end
-% 
-%                 if (ismember(4,d_reqSolve))
-%                     % Linear least squares - SPLIT EQUATIONS      
-%                     d_flowSort=[];
-%                     for d_zone=1:clc_nZones
-%                         % Prepare matrices
-%                         Ccell=cell(clc_nZones,clc_nZones);
-%                         Ccell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-%                         Dcell=cell(clc_nZones,1);
-%                         Dcell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-% 
-%                         for i=1:clc_nZones
-%                             Ccell{i,d_zone}=-clc_impAve(:,(i-1)*clc_nZones+d_zone)/clc_zoneVol(d_zone);
-%                             for k=1:clc_nZones
-%                                 if (k~=d_zone)
-%                                     Ccell{i,k}=clc_impAve(:,(i-1)*clc_nZones+k)/clc_zoneVol(d_zone);
-%                                 end
-%                             end
-%                             Dcell{i,1}=clc_impdt(:,(i-1)*clc_nZones+d_zone);
-%                         end
-% 
-%                         C=cell2mat(Ccell);
-%                         D=cell2mat(Dcell);   
-%                         opts = optimset('Display', 'off');
-%                         [d_flow,d_resnorm,d_residual,d_exitflag]=lsqnonneg(C,D,opts);
-%                         d_flow=d_flow';
-%                         d_flow(d_zone)=-d_flow(d_zone);
-%                         d_flowSort(d_zone,:)=d_flow;
-%                         clc_fit{4,1}{d_zone,d_noise}=d_resnorm;
-%                         clc_fit{4,2}{d_zone,d_noise}=d_residual;
-%                         clc_fit{4,3}{d_zone,d_noise}=d_exitflag;
-%                     end
-%                     clc_flow{4}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=reshape(d_flowSort,clc_nZones^2,1);
-% 
-%                 end
-% 
-%                 if (ismember(3,d_reqSolve))
-%                     % Non-linear least squares - SINGLE EQUATION
-%                     d_flowSort=[];
-%                     x0=ones(clc_nZones*(clc_nZones+1),1)*100;
-%                     lb=zeros(clc_nZones*(clc_nZones+1),1);
-%                     ub=ones(clc_nZones*(clc_nZones+1),1)*500;
-%                     f=@(x)vecObj(x,clc_nZones,clc_zoneVol,clc_impAve,clc_impdt);
-%                     opts = optimoptions(@lsqnonlin,'Display', 'off');
-%                     d_flow=lsqnonlin(f,x0,lb,ub,opts)';
-%                     d_flowSort=d_flow(clc_nZones+1:end);
-%                     for d_i=1:clc_nZones
-%                         d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
-%                     end
-%                     clc_flow{3}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=d_flowSort;
-%                 end
-% 
-%                 if (ismember(5,d_reqSolve))
-%                     % Linear least squares - SINGLE EQUATION
-%                     d_flowSort=[];
-% 
-%                     % Prepare matrices
-%                     Ccell=cell(clc_nZones^2,clc_nZones^2);
-%                     Ccell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-%                     Dcell=cell(clc_nZones^2,1);
-%                     Dcell(:,:)={zeros(length(clc_impAve(:,1)),1)};
-% 
-%                     for i=1:clc_nZones
-%                         for j=1:clc_nZones
-%                                 Ccell((i-1)*clc_nZones+j,(i-1)*clc_nZones+1:i*clc_nZones)={-clc_impAve(:,(j-1)*clc_nZones+i)/clc_zoneVol(i)};
-%                                 Dcell{(i-1)*clc_nZones+j,1}=clc_impdt(:,(j-1)*clc_nZones+i);
-%                                 for k=1:clc_nZones
-%                                     if (k~=i)
-%                                         Ccell{(i-1)*clc_nZones+j,(k-1)*clc_nZones+i}=clc_impAve(:,(j-1)*clc_nZones+k)/clc_zoneVol(i);
-%                                     end
-%                                 end
-%                         end
-%                     end
-% 
-%                     C=cell2mat(Ccell);
-%                     D=cell2mat(Dcell);
-% 
-%                     C=[zeros(size(C,1),clc_nZones) C];
-%                     D=[D; zeros(clc_nZones,1)];
-% 
-%                     Cext=zeros(clc_nZones,clc_nZones*(clc_nZones+1));
-% 
-%                     for i=1:clc_nZones
-%                         Cext(i,i)=-1;
-%                         Cext(i,i*clc_nZones+1:(i+1)*clc_nZones)=1;
-%                         for j=1:clc_nZones
-%                             if (j~=i)
-%                                 Cext(i,j*clc_nZones+i)=-1;
-%                             end
-%                         end
-%                     end
-% 
-%                     C=[C; Cext];      
-% 
-%                     opts = optimset('Display', 'off');
-%                     [d_flow,d_resnorm,d_residual,d_exitflag]=lsqnonneg(C,D,opts);
-%                     d_flow=d_flow';
-%                     d_flowSort=d_flow(clc_nZones+1:end);
-%                     for d_i=1:clc_nZones
-%                         d_flowSort((d_i-1)*clc_nZones+d_i)=-sum(d_flowSort((d_i-1)*clc_nZones+1:d_i*clc_nZones));
-%                     end
-%                     clc_flow{5}{d_imp,d_conc}{2,d_seqA}(d_seqV,:,d_noise)=d_flowSort;
-%                     clc_fit{5,1}{1,d_noise}=d_resnorm;
-%                     clc_fit{5,2}{1,d_noise}=d_residual;
-%                     clc_fit{5,3}{1,d_noise}=d_exitflag;
-%                 end
-%             end
-%         end
-%     end
-% end
-% 
-% outB_flow{ref_bPerm}=clc_flow;
-% outB_fit{ref_bPerm}=clc_fit;
+clc_Q=[0 clc_flowTest];
+% Fill in blank flowrates into matrix
+for d_i=clc_tZones^2+1:setup_nModelZones^2
+    clc_Q(d_i+1)=0;
+end
+
+ % Set up initial blank vent gain matrices
+clc_Qgain=cell(1,setup_nModelZones);
+clc_Qgain(1:setup_nModelZones)={zeros(setup_nModelZones,setup_nModelZones^2)};
+
+for d_i=1:clc_tZones
+    for d_j=1:clc_tZones
+        clc_Qgain{d_j}(d_i,((d_i-1)*clc_tZones)+d_j)=1;
+    end    
+end
+
+assignin('base','sim_stepSize',clc_stepSize);
+assignin('base','sim_Q',clc_Q);
+assignin('base','sim_Qgain',clc_Qgain);    
+assignin('base','sim_zoneVolGain',clc_zoneVolGain);
+
+sim_impT=[];
+sim_impX=[];
+sim_impResp=[];
+sim_impTracer=[];        
+clc_impulse=[];
+
+for d_i=1:clc_tZones
+    d_imp=zeros(1,setup_nModelZones);
+    d_imp(d_i)=clc_zoneVol(d_i)*1000/1000000; % Will start impulse at 1000ppm
+    assignin('base','sim_imp',d_imp);
+    [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',24);
+    clc_impulse(:,((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
+end
+
+clc_shift=[7/15 1 22/15 2 37/15 3 52/15 4 67/15 5 82/15 6; 8/15 1 23/15 2 38/15 3 53/15 4 68/15 5 83/15 6];
+
+for d_i=1:size(clc_impulse,2)
+    clc_impulseCorr(:,d_i)=clc_impulse(:,d_i);
+    for d_j=1:12
+        clc_impulseCorr(:,d_i)=clc_impulseCorr(:,d_i)+circshift(clc_impulse(:,floor((d_i-1)/2)*2+rem(d_j+(d_i-1),2)+1),clc_shift(rem(d_i,2)+1,d_j)*clc_seqPeriod*3600);
+    end
+end
+        
+    
 
 %% Save output
-
 d_procTime=toc
