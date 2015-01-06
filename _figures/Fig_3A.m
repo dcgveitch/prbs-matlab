@@ -1,13 +1,11 @@
-%% Plot boxplots of general grouped results
-%% Flow type, Seq Period, Seq Length
+%% Plot boxplots for sequence averaged variable flow results
 
-clear
 [d_upperPath, d_folder, ~] = fileparts(pwd);
 if d_folder(2)=='_', d_folderTS=d_folder(5:15);
 else d_folderTS=d_folder(1:11); end
 
 cd Results;
-load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
+load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 
 nX=3;
 nY=1;
@@ -28,30 +26,49 @@ colours=pmkmp(6,'CubicL');
 groupDims=[9 2 1];
 
 % What's included in the summary
+d_fig=6;
 d_reqSeqLength=1:length(unique(r_seqLength));
 d_reqSeqPeriod=1:length(unique(r_seqPeriod));
-d_reqNZones=1:length(unique(r_nZones));
+d_reqNZones=1:3;
 d_reqSolve=[1];
 d_reqImp=[1];
 d_reqNSeqA=[1];
 d_reqTSeqA=[1];
-d_reqConc=[1];
+d_reqConc=[6];
 d_reqFlowType=[1 2 3];
 
-d_dir{1}='P6';
-d_figAve=1;
+% Get the relevant data from the averaging approaches
+d_figSeqA=12; % Hrs
+d_dir{1}='P6_';
 
-for d_out=1:7
-    d_reqConc=d_out;
+switch d_figSeqA
+    case 12
+        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6);
+        d_dir{2}='P6_A1';
+    case 24
+        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6 | unique(r_seqPeriod)==12);
+        d_dir{2}='P6_A2';
+    case 48
+        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6 | unique(r_seqPeriod)==12 | unique(r_seqPeriod)==24);
+        d_dir{2}='P6_A3';
+end
+
+for d_figAve=1:2
+    disp(['Summarising ' num2str(d_figAve) '/2'])
+    P7_Grouping;
+    out_figSummary{d_figAve}=out_summary;
+end
+    
+% For breaking it down again by nZones
+for d_figAve=1:2
     figOut=figure;
     set(figOut,'Units','centimeters');
     set(figOut,'Position', [5, 5, 17, 7]);
     set(figOut,'Units','pixels');
-    set(gcf,'Renderer','Painters');
 
-    P7_Grouping; 
-    for d_i=1:3        
-        d_summary=out_summary(find(out_summary(:,1)==d_i),:);
+    set(gcf,'Renderer','Painters'); 
+    for d_i=1:3 % For different airflow categories
+        d_summary=out_figSummary{d_figAve}(find(out_figSummary{d_figAve}(:,1)==d_i),:);
         flowStats=d_summary(:,11:15)'*100;
         nTotal=sum(d_summary(:,6));
         grouping1=d_summary(:,3)';
@@ -115,10 +132,10 @@ for d_out=1:7
           'XMinorTick'  , 'off'         , ...
           'YMinorTick'  , 'off'         , ...
           'YGrid'       , 'on'          , ...
-          'YTick'       , -100:20:100);
+          'YTick'       , -100:20:100   , ...
+          'Layer'       , 'top');
     end
-
-    fileSaveName=['Plot_' num2str(d_out) '.pdf'];
+    fileSaveName=['Ave_' num2str(d_figAve) '.pdf'];
     export_fig('filename', fileSaveName, '-nocrop');
     close(gcf);
 end
