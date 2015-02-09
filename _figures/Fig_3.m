@@ -47,7 +47,7 @@ for d_out=1:7
     set(figOut,'Units','centimeters');
     set(figOut,'Position', [5, 5, 17, 7]);
     set(figOut,'Units','pixels');
-    set(gcf,'Renderer','Painters');
+%     set(gcf,'Renderer','Painters');
 
     P7_Grouping; 
     for d_i=1:3        
@@ -61,7 +61,7 @@ for d_out=1:7
 
         handAxesM(d_i)=axes;
         data=rand(20,size(flowStats,2));
-        h=boxplotDV(data,{grouping2,grouping1},'factorgap',[3 0.1],'colors',repmat(flipud(colours(2:2+(nGrouping1-1),:)),nGrouping2,1),'factorseparator',[1], 'widths', 1, 'boxstyle','outline');
+        h=boxplot(data,{grouping2,grouping1},'factorgap',[3 0.1],'colors',repmat(flipud(colours(2:2+(nGrouping1-1),:)),nGrouping2,1), 'factorseparator', [1], 'widths', 1, 'boxstyle','outline');
         set(h(1,:),{'Ydata'},num2cell(flowStats(end-1:end,:),1)')
         set(h(2,:),{'Ydata'},num2cell(flowStats(2:-1:1,:),1)')
         set(h(3,:),{'Ydata'},num2cell(flowStats([end end],:),1)')
@@ -92,16 +92,16 @@ for d_out=1:7
 
         switch d_i
             case 1
-                title('Total Dwelling Flow', 'FontSize', 10);
+                title('Total Dwelling Ventilation', 'FontSize', 10);
                 hYLabel = ylabel('Flow Weighted Error (%)');
                 set(hYLabel, 'Units', 'Normalized', 'Position', [-0.12, 0.5, 0]);
                 hXLabel = xlabel('PRBS Period (hours)');
             case 2
-                title('Total Zonal Flows','FontSize', 10);
+                title('Zonal Infiltration','FontSize', 10);
                 set(gca,'YTickLabel',[]);
                 hXLabel = xlabel('PRBS Period (hours)');
             case 3
-                title('Individual Flows','FontSize', 10);
+                title('Individual Airflows','FontSize', 10);
                 set(gca,'YTickLabel',[]);
                 hXLabel = xlabel('PRBS Period (hours)');
                 legendflex(legendText,'xscale', 0.5, 'title', {'PRBS Length (bits)'}, 'padding', [10 10 10], 'box', 'on', 'ncol', 2);
