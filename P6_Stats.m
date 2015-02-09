@@ -23,7 +23,7 @@ ind_2_Group=unique(r_seqPeriod);
 ind_3_Group=unique(r_nZones);
 
 setup_batchSize=setup_nMC;
-setup_batchProc=100;
+setup_batchProc=95;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
@@ -145,12 +145,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         d_bL=unique(d_batchList,'rows');
         for d_i=1:size(d_bL,1)
             filename=[num2str(d_bL(d_i,1)) '_' num2str(d_bL(d_i,2)) '_' num2str(d_bL(d_i,3)) '_' num2str(d_bL(d_i,4)) '_' num2str(d_bL(d_i,5)) '_' num2str(d_bL(d_i,6)) '_' num2str(d_bL(d_i,7)) '_' num2str(d_bL(d_i,8)) '_' num2str(d_bL(d_i,9))];
-            try  
-                load(filename);
-                out_results=[out_results; outB_resultsCombined{d_bL(d_i,1),d_bL(d_i,2),d_bL(d_i,3),d_bL(d_i,4),d_bL(d_i,5),d_bL(d_i,6),d_bL(d_i,7),d_bL(d_i,8),d_bL(d_i,9)}];
-            catch
-                out_results=outB_resultsCombined{d_bL(d_i,1),d_bL(d_i,2),d_bL(d_i,3),d_bL(d_i,4),d_bL(d_i,5),d_bL(d_i,6),d_bL(d_i,7),d_bL(d_i,8),d_bL(d_i,9)};
-            end
+            out_results=outB_resultsCombined{d_bL(d_i,1),d_bL(d_i,2),d_bL(d_i,3),d_bL(d_i,4),d_bL(d_i,5),d_bL(d_i,6),d_bL(d_i,7),d_bL(d_i,8),d_bL(d_i,9)};
             save(filename,'out_results','-v6');
             clear out_results;
         end
