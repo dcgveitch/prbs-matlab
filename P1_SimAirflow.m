@@ -5,7 +5,7 @@ tic
 
 %% Read permuations from Excel file
 d_testN=0;
-setup_excelInput='InputParametersN.xlsx';
+setup_excelInput='_INPUT/InputParametersN.xlsx';
 setup_timeStamp=datestr(now,'yymmddTHHMM');
 setup_nModelZones=8;
 setup_ranSeedOffset=44332211;
