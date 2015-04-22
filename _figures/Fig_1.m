@@ -1,5 +1,5 @@
 %% Errors in discretised impulse response.
-%% Use with data from '3_1_140922T1601_Impulses'
+%% Use with data from '141124T1707_Impulses'
 
 clear d_*
 
@@ -21,7 +21,7 @@ sizeYPad=0.3/sizeYcm;
 sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX;
 sizeYM=(sizeYTotal-(nY-1)*sizeYPad)/nY;
 
-colours=pmkmp(6,'CubicL');
+colours=flipud(pmkmp(6,'CubicL'));
 
 figOut=figure;
 set(figOut,'Units','centimeters');
@@ -55,18 +55,18 @@ for d_type=1:2
         handAxesM(d_axis)=axes('color','none');
         d_plot=1;
         for d_i=1:5
-            d_p(d_plot)=plot(-(1/(length(crossCorr{d_i})-1))/2:1/(length(crossCorr{d_i})-1):1,crossCorr{d_i}*yScale,'color',colours(d_plot+1,:));
+            d_p(d_plot)=plot(-(1/(length(crossCorr{d_i})-1))/2:1/(length(crossCorr{d_i})-1):1,crossCorr{d_i}*yScale,'color',colours(d_plot,:));
             switch rem(d_i-1,5)+1
                 case 1
-                    d_legend{d_plot}=['15 bit'];
+                    d_legend{d_plot}=['15'];
                 case 2
-                    d_legend{d_plot}=['31 bit'];
+                    d_legend{d_plot}=['31'];
                 case 3
-                    d_legend{d_plot}=['63 bit'];
+                    d_legend{d_plot}=['63'];
                 case 4
-                    d_legend{d_plot}=['127 bit'];
+                    d_legend{d_plot}=['127'];
                 case 5
-                    d_legend{d_plot}=['255 bit'];
+                    d_legend{d_plot}=['255'];
             end
             hold on
             d_plot=d_plot+1;    
@@ -76,7 +76,7 @@ for d_type=1:2
         
         set(handAxesM(d_axis),'Position', [sizeXMOff+rem(d_axis-1,nX)*(sizeXM+sizeXPad) (sizeYMOff+(floor((d_axis-1)/nX))*(sizeYM+sizeYPad)) sizeXM sizeYM]);
 
-        xlim([0 6/10]);
+        xlim([0 4/10]);
         ylim([0 1.25]);
         
         x_title{1}=['Internal Input'];
@@ -87,11 +87,11 @@ for d_type=1:2
         xa=handAxesM(d_axis);
         
         xa.TickLength=[0.01 0];
-        xa.XTick=[0:2/10:1];
+        xa.XTick=[0:1/10:1];
         xa.YTick=[0:0.25:1.25];
         
         if (d_type==1) 
-            xa.XTickLabel={'0','2','4','6', '8'};
+            xa.XTickLabel={'0','1','2','3', '4'};
             xlabel('Time (hours)');
         else
             xa.XTickLabel=[];
@@ -111,11 +111,12 @@ for d_type=1:2
         end
 	        
         if (d_type==2 & d_impulse==2)
-            legendflex(d_legend,'xscale', 0.5, 'title', {'PRBS Sequence Length'}, 'padding', [10 10 10], 'box', 'on', 'ncol', 2);
+            legendflex(d_legend,'xscale', 0.5, 'title', {'PRBS Length (bits)'}, 'padding', [10 10 10], 'box', 'on', 'ncol', 2);
         end
         
         grid on;
-        xa.GridAlpha=0.85;        
+        xa.GridAlpha=0.85;
+        xa.GridColor=[0.5 0.5 0.5];
         d_axis=d_axis+1;
     end
 end

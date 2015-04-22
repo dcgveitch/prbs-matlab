@@ -22,7 +22,7 @@ sizeYPad=0.01;
 sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX; 
 sizeYM=(sizeYTotal-(nY-1)*sizeYPad)/nY;
 
-colours=pmkmp(11,'CubicL');
+colours=pmkmp(6,'CubicL');
 
 % Select grouping dimensions
 groupDims=[9 2 1];
@@ -31,21 +31,18 @@ groupDims=[9 2 1];
 d_reqSeqLength=1:length(unique(r_seqLength));
 d_reqSeqPeriod=1:length(unique(r_seqPeriod));
 d_reqNZones=1:length(unique(r_nZones));
-d_reqSolve=[1 4 5];
+d_reqSolve=[1];
 d_reqImp=[1];
 d_reqNSeqA=[1];
 d_reqTSeqA=[1];
-d_reqConc=[4];
+d_reqConc=[1];
 d_reqFlowType=[1 2 3];
 
 d_dir{1}='P6';
 d_figAve=1;
 
-for d_out=[1 4 5]
-%     if d_out<5, d_reqNZones=d_out;
-%     else d_reqNZones=1:length(unique(r_nZones));
-%     end
-    d_reqSolve=d_out;
+for d_out=1:7
+    d_reqConc=d_out;
     figOut=figure;
     set(figOut,'Units','centimeters');
     set(figOut,'Position', [5, 5, 17, 7]);
@@ -88,33 +85,13 @@ for d_out=[1 4 5]
 
         graphX=max(xlim);
         graphXint=graphX/6;
-
-        set(gca,'xTick', graphXint/2:graphXint:graphX, 'XTickLabel',{'2' '3' '4' '6' '12' '24'})
-        legendText={'15','31','63','127','255'};
-%         legendText=legendText(1:nGrouping1);
-
-        switch d_i
-            case 1
-                title('Total Dwelling Ventilation');
-                hYLabel = ylabel('Flow Weighted Error (%)');
-                set(hYLabel, 'Units', 'Normalized', 'Position', [-0.12, 0.5, 0]);
-                hXLabel = xlabel('PRBS Period (hours)');
-            case 2
-                title('Zonal Infiltration');
-                set(gca,'YTickLabel',[]);
-                hXLabel = xlabel('PRBS Period (hours)');
-            case 3
-                title('Individual Airflows');
-                set(gca,'YTickLabel',[]);
-                hXLabel = xlabel('PRBS Period (hours)');
-                % legendflex(legendText,'xscale', 0.5, 'title', {'PRBS Length (bits)'}, 'padding', [10 10 10], 'box', 'on', 'ncol', 2);
-                % handAxesM(3),
-        end
-        text((max(xlim)-min(xlim))*0.8+min(xlim), (max(ylim)-min(ylim))*0.055+min(ylim), ['n = ' separatethousands(nTotal,',',0)], 'FontSize', 7, 'VerticalAlignment' , 'middle', 'HorizontalAlignment' , 'center', 'BackgroundColor', 'White');
+        
+        set(gca,'xTick', graphXint/2:graphXint:graphX, 'XTickLabel',{''});
 
         set(gca, ...
-          'TickDir'     , 'in'         , ...
-          'TickLength'  , [0.01 0]         , ...
+          'TickDir'     , 'in'          , ...
+          'TickLength'  , [0.01 0]      , ...
+          'YTickLabel'  , []            , ...
           'XMinorTick'  , 'off'         , ...
           'YMinorTick'  , 'off'         , ...
           'YGrid'       , 'on'          , ...
@@ -123,7 +100,7 @@ for d_out=[1 4 5]
           'YTick'       , -100:20:100);      
     end
 
-    fileSaveName=['PlotZ255_' num2str(d_out) '.pdf'];
+    fileSaveName=['Plot_' num2str(d_out) '_NT.pdf'];
     export_fig('filename', fileSaveName, '-nocrop');
     close(gcf);
 end
