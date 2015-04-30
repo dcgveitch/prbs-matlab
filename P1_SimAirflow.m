@@ -4,7 +4,7 @@ clear;
 tic
 
 %% Read permuations from Excel file
-d_testN=0;
+d_testN=0;  
 setup_excelInput='_INPUT/InputParametersN.xlsx';
 setup_timeStamp=datestr(now,'yymmddTHHMM');
 setup_nModelZones=8;
@@ -338,7 +338,70 @@ for d_perm=1:setup_nPerm
                 end
             end
             r_failReselect(d_sim)=d_failReselect;
-            d_flow=d_flowTest;            
+            d_flow=d_flowTest;      
+            
+        elseif (r_afType(d_sim,1)=='O')
+            % If airflows are a MC variable WITH ONE WAY INTERNAL FLOWS
+            d_formatStr='%f';
+            d_temp=sscanf(char(ind_afRefsStr{d_perm}),d_formatStr);
+            r_afRefs{d_sim}=d_temp;             
+            
+            d_failFlag=1;
+            d_failReselect=-1;
+            while d_failFlag>0
+                d_ext=random('logn',log(r_afRefs{d_sim}(1)),setup_mFlowExtLogSD,1,1);
+                d_int=random('logn',log(r_afRefs{d_sim}(2)),setup_mFlowIntLogSD,1,1);
+                
+                d_totalVol=sum(r_zoneVol(d_sim,:))*d_ext;
+                d_split=sort(rand(r_nZones(d_sim)-1,1));
+                d_split=[0; d_split; 1];
+                d_split=(d_split(2:end)-d_split(1:end-1))'.*r_zoneVol(d_sim,1:r_nZones(d_sim));
+                d_split=d_split*d_totalVol/sum(d_split);
+                r_flowExt(d_sim,1:r_nZones(d_sim))=d_split./r_zoneVol(d_sim,1:r_nZones(d_sim));
+
+                d_failReselect=d_failReselect+1;
+                d_failCount=-1;
+                while d_failFlag>0 && d_failCount<50000
+                    d_failFlag=0;
+                    d_flowTest=[];
+                    d_failCount=d_failCount+1;
+                    
+                    % New weighted assignment of internal flows
+                    d_totalVol=sum(r_zoneVol(d_sim,:))*d_int;
+                    d_split=sort(rand(r_nZones(d_sim)-1,1));
+                    d_split=[0; d_split; 1];
+                    d_zoneWeight=[];
+                    for d_zone1=1:r_nZones(d_sim)
+                        d_zoneWeight(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,rem(d_zone1,r_nZones(d_sim))+1);
+                    end
+                    d_split=(d_split(2:end)-d_split(1:end-1))'.*d_zoneWeight;
+                    d_split=d_split*d_totalVol/sum(d_split);
+                    
+                    d_count=1;                              
+                    for d_zone1=1:r_nZones(d_sim)
+                        for d_zone2=1:r_nZones(d_sim)
+                            if (d_zone1==d_zone2)
+                                d_flowTest(d_zone1,d_zone2) = r_flowExt(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone1);
+                            elseif (d_zone2==rem(d_zone1,r_nZones(d_sim))+1)
+                                d_flowTest(d_zone1,d_zone2) = d_split(d_count);
+                                r_flowIntSplit{d_sim}(d_zone1,d_zone2)=d_split(d_count)/r_zoneVol(d_sim,d_zone1);
+                                d_count=d_count+1;
+                            else
+                                d_flowTest(d_zone1,d_zone2) = 0;
+                                r_flowIntSplit{d_sim}(d_zone1,d_zone2)=0;
+                            end
+                        end
+                    end
+
+                    for d_zone=1:r_nZones(d_sim) % Check internal flows are not driving extra exfiltration
+                        if (sum(d_flowTest(d_zone,:),2)<(sum(d_flowTest(:,d_zone),1)-d_flowTest(d_zone,d_zone)))
+                            d_failFlag=1;
+                        end
+                    end
+                end
+            end
+            r_failReselect(d_sim)=d_failReselect;
+            d_flow=d_flowTest;
             
         elseif (r_afType(d_sim,1)=='S')
             % Extract permutation airflow references
