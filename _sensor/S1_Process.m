@@ -11,7 +11,7 @@ d_reqImp=[1 2];
 mat_testCell=matfile('TestCell.mat');
 
 %% Test Description
-sens_results=mat_testCell.T141023;
+sens_results=mat_testCell.T150429;
 sens_concZ=[];
 sens_ext=sens_results.ext;
 sens_concZ{1}=sens_results.z1;
@@ -124,12 +124,12 @@ clc_crossCorr=[];
 % Calculate cross correlations and flows for all sequence positions required
 d_seqA=1;
 
-for d_z1=1:1
-    for d_z2=1:1
+for d_z1=1:2
+    for d_z2=1:2
         sens_conc=[sens_concZ{1}(:,d_z1) sens_concZ{2}(:,d_z2)];
         sens_comb=(d_z1-1)*sens_nZ1+d_z2;
 
-        for d_seqV=1:1
+        for d_seqV=1:7
             if (ismember(1,d_reqImp) || ismember(2,d_reqImp))
                 for d_relZone=1:clc_nZones
                     for d_concZone=1:clc_nZones
@@ -161,7 +161,7 @@ for d_z1=1:1
 
             for d_imp=d_reqImp
                 % Calculate flowrates
-                for cll_trim=0:40
+                for cll_trim=0
                     cll_crossCorrSum=[];
                     cll_D=[];
                     cll_E=[];
@@ -330,57 +330,57 @@ for d_z1=1:1
     end
 end
 
-%% Direct impulse simulation
-clc_flowTest=clc_flow{1,5}{2}{1,1}(1,:);
-clc_crossCorrTest=[squeeze(clc_crossCorr{2}(:,1,[1 2],1)) squeeze(clc_crossCorr{2}(:,2,[2 1],1))];
-
-setup_nModelZones=8;
-clc_tZones=2;
-clc_stepSize=1/3600; % 1 second
-
-clc_Q=[0 clc_flowTest];
-% Fill in blank flowrates into matrix
-for d_i=clc_tZones^2+1:setup_nModelZones^2
-    clc_Q(d_i+1)=0;
-end
-
- % Set up initial blank vent gain matrices
-clc_Qgain=cell(1,setup_nModelZones);
-clc_Qgain(1:setup_nModelZones)={zeros(setup_nModelZones,setup_nModelZones^2)};
-
-for d_i=1:clc_tZones
-    for d_j=1:clc_tZones
-        clc_Qgain{d_j}(d_i,((d_i-1)*clc_tZones)+d_j)=1;
-    end    
-end
-
-assignin('base','sim_stepSize',clc_stepSize);
-assignin('base','sim_Q',clc_Q);
-assignin('base','sim_Qgain',clc_Qgain);    
-assignin('base','sim_zoneVolGain',clc_zoneVolGain);
-
-sim_impT=[];
-sim_impX=[];
-sim_impResp=[];
-sim_impTracer=[];        
-clc_impulse=[];
-
-for d_i=1:clc_tZones
-    d_imp=zeros(1,setup_nModelZones);
-    d_imp(d_i)=clc_zoneVol(d_i)*1000/1000000; % Will start impulse at 1000ppm
-    assignin('base','sim_imp',d_imp);
-    [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',24);
-    clc_impulse(:,((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
-end
-
-clc_shift=[7/15 1 22/15 2 37/15 3 52/15 4 67/15 5 82/15 6; 8/15 1 23/15 2 38/15 3 53/15 4 68/15 5 83/15 6];
-
-for d_i=1:size(clc_impulse,2)
-    clc_impulseCorr(:,d_i)=clc_impulse(:,d_i);
-    for d_j=1:12
-        clc_impulseCorr(:,d_i)=clc_impulseCorr(:,d_i)+circshift(clc_impulse(:,floor((d_i-1)/2)*2+rem(d_j+(d_i-1),2)+1),clc_shift(rem(d_i,2)+1,d_j)*clc_seqPeriod*3600);
-    end
-end
+% %% Direct impulse simulation
+% clc_flowTest=clc_flow{1,5}{2}{1,1}(1,:);
+% clc_crossCorrTest=[squeeze(clc_crossCorr{2}(:,1,[1 2],1)) squeeze(clc_crossCorr{2}(:,2,[2 1],1))];
+% 
+% setup_nModelZones=8;
+% clc_tZones=2;
+% clc_stepSize=1/3600; % 1 second
+% 
+% clc_Q=[0 clc_flowTest];
+% % Fill in blank flowrates into matrix
+% for d_i=clc_tZones^2+1:setup_nModelZones^2
+%     clc_Q(d_i+1)=0;
+% end
+% 
+%  % Set up initial blank vent gain matrices
+% clc_Qgain=cell(1,setup_nModelZones);
+% clc_Qgain(1:setup_nModelZones)={zeros(setup_nModelZones,setup_nModelZones^2)};
+% 
+% for d_i=1:clc_tZones
+%     for d_j=1:clc_tZones
+%         clc_Qgain{d_j}(d_i,((d_i-1)*clc_tZones)+d_j)=1;
+%     end    
+% end
+% 
+% assignin('base','sim_stepSize',clc_stepSize);
+% assignin('base','sim_Q',clc_Q);
+% assignin('base','sim_Qgain',clc_Qgain);    
+% assignin('base','sim_zoneVolGain',clc_zoneVolGain);
+% 
+% sim_impT=[];
+% sim_impX=[];
+% sim_impResp=[];
+% sim_impTracer=[];        
+% clc_impulse=[];
+% 
+% for d_i=1:clc_tZones
+%     d_imp=zeros(1,setup_nModelZones);
+%     d_imp(d_i)=clc_zoneVol(d_i)*1000/1000000; % Will start impulse at 1000ppm
+%     assignin('base','sim_imp',d_imp);
+%     [sim_impT,sim_impX,sim_impResp,sim_impTracer,sim_impFlow]=sim('Impulse_Para',24);
+%     clc_impulse(:,((d_i-1)*clc_tZones)+1:(d_i*clc_tZones))=sim_impResp(:,1:clc_tZones);
+% end
+% 
+% clc_shift=[7/15 1 22/15 2 37/15 3 52/15 4 67/15 5 82/15 6; 8/15 1 23/15 2 38/15 3 53/15 4 68/15 5 83/15 6];
+% 
+% for d_i=1:size(clc_impulse,2)
+%     clc_impulseCorr(:,d_i)=clc_impulse(:,d_i);
+%     for d_j=1:12
+%         clc_impulseCorr(:,d_i)=clc_impulseCorr(:,d_i)+circshift(clc_impulse(:,floor((d_i-1)/2)*2+rem(d_j+(d_i-1),2)+1),clc_shift(rem(d_i,2)+1,d_j)*clc_seqPeriod*3600);
+%     end
+% end
         
     
 
