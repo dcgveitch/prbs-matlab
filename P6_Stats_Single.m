@@ -115,6 +115,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                 
                                 d_count3=1;
                                 d_resultsCombined=[];
+                                d_resultsCombinedSum=[];
                                 % Output airflow and weight
                                 for d_dt=1:d_ndt
                                     for d_flow1=1:d_nFlow1
@@ -125,13 +126,18 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                             % Individual raw results with references
                                             d_resultsCombined(d_count3,1)=abs(d_flowProcessP(2,d_dt))/d_flowTotal(d_dt)/d_ndt/d_nNoise; 
                                             d_resultsCombined(d_count3,2)=(d_flowProcessP(3,d_dt)-d_flowProcessP(2,d_dt))/d_flowProcessP(2,d_dt); % Only processing single version of flow
+                                            d_resultsCombinedSum(d_count3,1)=d_flowProcessP(3,d_dt);
+                                            d_resultsCombinedSum(d_count3,2)=d_flowProcessP(2,d_dt); % WILL NOT WORK FOR MULTIPLE TIME STEPS OR NOISE CASES
                                             d_count=d_count+d_nNoise;
                                             d_count3=d_count3+1;
                                         end
                                     end
                                 end
                                 out_resultsCombined(d_batchRun(ref_bPerm),d_flowType)=sum(d_resultsCombined(:,1).*d_resultsCombined(:,2));
-                            end          
+                                out_resultsCombinedSum(d_batchRun(ref_bPerm),d_flowType)=(sum(d_resultsCombinedSum(:,1))-sum(d_resultsCombinedSum(:,2)))/sum(d_resultsCombinedSum(:,2));
+                            end
+                            out_resultsCombined(d_batchRun(ref_bPerm),4)=clc_nZones;
+                            out_resultsCombined(d_batchRun(ref_bPerm),5)=(out_flowTotal(d_batchRun(ref_bPerm),3)-out_flowTotal(d_batchRun(ref_bPerm),1))/(2*out_flowTotal(d_batchRun(ref_bPerm),1));
                         end
                     end
                 end 
@@ -146,6 +152,8 @@ end
 d_procTime=toc
 mat_outP6.d_procTime=d_procTime;
 mat_outP6.out_resultsCombined=out_resultsCombined;
+mat_outP6.out_resultsCombinedSum=out_resultsCombinedSum;
+mat_outP6.out_flowTotal=out_flowTotal;
 cd ../..;
 
 
