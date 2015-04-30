@@ -14,9 +14,9 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
-d_reqSolve=[1];
+d_reqSolve=[1 4 5];
 d_reqImp=[1];
-d_reqConc=[1];
+d_reqConc=[1 4];
 
 save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*', '-append')
 
@@ -357,26 +357,26 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                             cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                             cll_sumStart = 1;
                             cll_sumEnd = size(cll_crossCorrCalc,1);
-                            d_maxOut=size(cll_crossCorrCalc,1);
-                            for d_i=1:size(cll_crossCorrCalc,2)
-                                for d_j=1:size(cll_crossCorrCalc,3)
-                                    d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
-                                    if d_max<d_maxOut, d_maxOut=d_max; end
-                                end
-                            end
-                            cll_sumEnd=min(d_maxOut,cll_sumEnd);
+%                             d_maxOut=size(cll_crossCorrCalc,1);
+%                             for d_i=1:size(cll_crossCorrCalc,2)
+%                                 for d_j=1:size(cll_crossCorrCalc,3)
+%                                     d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
+%                                     if d_max<d_maxOut, d_maxOut=d_max; end
+%                                 end
+%                             end
+%                             cll_sumEnd=min(d_maxOut,cll_sumEnd);
                         else
                             cll_crossCorrCalc=clc_crossCorr{d_imp}(1:(floor(clc_seqLength/clc_nZones)*clc_seqMultiple),:,:,d_seqV);
                             cll_sumStart = clc_seqMultiple+1;
                             cll_sumEnd = size(cll_crossCorrCalc,1)-clc_seqMultiple+1;
-                            d_maxOut=size(cll_crossCorrCalc,1);
-                            for d_i=1:size(cll_crossCorrCalc,2)
-                                for d_j=1:size(cll_crossCorrCalc,3)
-                                    d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
-                                    if d_max<d_maxOut, d_maxOut=d_max; end
-                                end
-                            end
-                            cll_sumEnd=min(d_maxOut,cll_sumEnd);
+%                             d_maxOut=size(cll_crossCorrCalc,1);
+%                             for d_i=1:size(cll_crossCorrCalc,2)
+%                                 for d_j=1:size(cll_crossCorrCalc,3)
+%                                     d_max=max(find(cll_crossCorrCalc(:,d_i,d_j)>max(cll_crossCorrCalc(:,d_i,d_j)*0.05)));
+%                                     if d_max<d_maxOut, d_maxOut=d_max; end
+%                                 end
+%                             end
+%                             cll_sumEnd=min(d_maxOut,cll_sumEnd);
                         end
                         cll_crossCorrCalc=cll_crossCorrCalc(cll_sumStart:cll_sumEnd,:,:);
 
