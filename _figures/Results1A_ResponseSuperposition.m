@@ -1,14 +1,23 @@
 %% Overlapping nature of cross correlation impulses
 %% Use with data from '3_1_140922T1601_Impulses'
 
+clear
+[d_upperPath, d_folder, ~] = fileparts(pwd);
+if d_folder(2)=='_', d_folderTS=d_folder(5:15);
+else d_folderTS=d_folder(1:11); end
+
+cd Results;
+load(strcat(d_folderTS(1:11), '__outP1.mat'));
+load(strcat(d_folderTS(1:11), '__outP2.mat'));
+load(strcat(d_folderTS(1:11), '__outP3.mat'));
+load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
+
 seqdT=30/3600;
 seqLength=12;
 seqRepeat=2;
 nZones=2;
 
 input=downsample(out_impulseSim{1}(:,[1 3]),30);
-
-clear impulseT;
 
 for i=1:ceil(seqLength/seqRepeat)
     for j=1:nZones

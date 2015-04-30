@@ -1,74 +1,40 @@
-%% Plot boxplots for sequence averaged variable flow results
+%% Base boxplot script for general grouped results
 
-[d_upperPath, d_folder, ~] = fileparts(pwd);
-if d_folder(2)=='_', d_folderTS=d_folder(5:15);
-else d_folderTS=d_folder(1:11); end
+% Generate grouped 
+P7_Grouping;
 
-cd Results;
-load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
-
-nX=3;
-nY=1;
-
-sizeXMOff=0.07;
-sizeYMOff=0.07;
-sizeXTotal=0.9;
-sizeYTotal=0.78;
-sizeXPad=0.01;
-sizeYPad=0.01;
-
-sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX; 
-sizeYM=(sizeYTotal-(nY-1)*sizeYPad)/nY;
-
-colours=pmkmp(6,'CubicL');
-
-% Select grouping dimensions
-groupDims=[9 2 1];
-
-% What's included in the summary
-d_fig=6;
-d_reqSeqLength=1:length(unique(r_seqLength));
-d_reqSeqPeriod=1:length(unique(r_seqPeriod));
-d_reqNZones=1:3;
-d_reqSolve=[1];
-d_reqImp=[1];
-d_reqNSeqA=[1];
-d_reqTSeqA=[1];
-d_reqConc=[6];
-d_reqFlowType=[1 2 3];
-
-% Get the relevant data from the averaging approaches
-d_figSeqA=12; % Hrs
-d_dir{1}='P6_';
-
-switch d_figSeqA
-    case 12
-        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6);
-        d_dir{2}='P6_A1';
-    case 24
-        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6 | unique(r_seqPeriod)==12);
-        d_dir{2}='P6_A2';
-    case 48
-        d_reqSeqPeriod=find(unique(r_seqPeriod)==2 | unique(r_seqPeriod)==3 | unique(r_seqPeriod)==6 | unique(r_seqPeriod)==12 | unique(r_seqPeriod)==24);
-        d_dir{2}='P6_A3';
-end
-
-for d_figAve=1:2
-    disp(['Summarising ' num2str(d_figAve) '/2'])
-    P7_Grouping;
-    out_figSummary{d_figAve}=out_summary;
-end
-    
-% For breaking it down again by nZones
-for d_figAve=1:2
+if (~isempty(out_summary))
     figOut=figure;
     set(figOut,'Units','centimeters');
     set(figOut,'Position', [5, 5, 17, 7]);
     set(figOut,'Units','pixels');
+    
+    % Make list of max combinations in figure
+    groupingFull1=req_i{groupDims(2)};
+    groupingFull2=req_i{groupDims(3)};
+    groupingFull=[];
+    for d_j=1:length(groupingFull1)
+        for d_k=1:length(groupingFull2)
+            groupingFull(end+1,:)=[groupingFull1(d_j) groupingFull2(d_k)];
+        end
+    end
 
-    set(gcf,'Renderer','Painters'); 
-    for d_i=1:3 % For different airflow categories
-        d_summary=out_figSummary{d_figAve}(find(out_figSummary{d_figAve}(:,1)==d_i),:);
+    for d_i=1:3        
+        d_summary=out_summary(find(out_summary(:,1)==d_i),:);
+        groupingMiss=setdiff(groupingFull,d_summary(:,2:3),'rows');
+
+        % Pad missing data
+        if (~isempty(groupingMiss))
+            for d_j=1:size(groupingMiss,1)
+                d_summary(end+1,1)=d_i;
+                d_summary(end,2:3)=groupingMiss(d_j,1:2);
+                d_summary(end,4:5)=1;
+                d_summary(end,6)=0;
+                d_summary(end,7:end)=999;
+            end
+            d_summary=sortrows(d_summary,[2 3]);
+        end
+
         flowStats=d_summary(:,11:15)'*100;
         nTotal=sum(d_summary(:,6));
         grouping1=d_summary(:,3)';
@@ -78,7 +44,7 @@ for d_figAve=1:2
 
         handAxesM(d_i)=axes;
         data=rand(20,size(flowStats,2));
-        h=boxplotDV(data,{grouping2,grouping1},'factorgap',[3 0.1],'colors',repmat(flipud(colours(2:2+(nGrouping1-1),:)),nGrouping2,1),'factorseparator',[1], 'widths', 1, 'boxstyle','outline');
+        h=boxplot(data,{grouping2,grouping1},'factorgap',[3 0.1],'colors',repmat(flipud(colours(2:2+(nGrouping1-1),:)),nGrouping2,1), 'factorseparator', [1], 'widths', 1, 'boxstyle','outline');
         set(h(1,:),{'Ydata'},num2cell(flowStats(end-1:end,:),1)')
         set(h(2,:),{'Ydata'},num2cell(flowStats(2:-1:1,:),1)')
         set(h(3,:),{'Ydata'},num2cell(flowStats([end end],:),1)')
@@ -109,33 +75,34 @@ for d_figAve=1:2
 
         switch d_i
             case 1
-                title('Total Dwelling Flow', 'FontSize', 10);
+                title('Total Dwelling Ventilation');
                 hYLabel = ylabel('Flow Weighted Error (%)');
                 set(hYLabel, 'Units', 'Normalized', 'Position', [-0.12, 0.5, 0]);
                 hXLabel = xlabel('PRBS Period (hours)');
             case 2
-                title('Total Zonal Flows','FontSize', 10);
+                title('Zonal Infiltration');
                 set(gca,'YTickLabel',[]);
                 hXLabel = xlabel('PRBS Period (hours)');
             case 3
-                title('Individual Flows','FontSize', 10);
+                title('Individual Airflows');
                 set(gca,'YTickLabel',[]);
                 hXLabel = xlabel('PRBS Period (hours)');
                 legendflex(legendText,'xscale', 0.5, 'title', {'PRBS Length (bits)'}, 'padding', [10 10 10], 'box', 'on', 'ncol', 2);
                 % handAxesM(3),
         end
-        text((max(xlim)-min(xlim))*0.8+min(xlim), (max(ylim)-min(ylim))*0.05+min(ylim), ['n = ' separatethousands(nTotal,',',0)], 'FontSize', 7, 'VerticalAlignment' , 'middle', 'HorizontalAlignment' , 'center', 'BackgroundColor', 'White');
+        text((max(xlim)-min(xlim))*0.8+min(xlim), (max(ylim)-min(ylim))*0.055+min(ylim), ['n = ' separatethousands(nTotal,',',0)], 'FontSize', 7, 'VerticalAlignment' , 'middle', 'HorizontalAlignment' , 'center', 'BackgroundColor', 'White');
 
         set(gca, ...
-          'TickDir'     , 'out'         , ...
-          'TickLength'  , [0 0]         , ...
+          'TickDir'     , 'in'         , ...
+          'TickLength'  , [0.01 0]         , ...
           'XMinorTick'  , 'off'         , ...
           'YMinorTick'  , 'off'         , ...
           'YGrid'       , 'on'          , ...
-          'YTick'       , -100:20:100   , ...
-          'Layer'       , 'top');
+          'GridColor'   , [0.5 0.5 0.5] , ...
+          'GridAlpha'   , 1             , ...
+          'YTick'       , -100:20:100);      
     end
-    fileSaveName=['Ave_' num2str(d_figAve) '.pdf'];
+
     export_fig('filename', fileSaveName, '-nocrop');
     close(gcf);
 end

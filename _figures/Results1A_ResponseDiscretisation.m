@@ -1,7 +1,16 @@
 %% Errors in discretised impulse response.
 %% Use with data from '141124T1707_Impulses'
 
-clear d_*
+clear
+[d_upperPath, d_folder, ~] = fileparts(pwd);
+if d_folder(2)=='_', d_folderTS=d_folder(5:15);
+else d_folderTS=d_folder(1:11); end
+
+cd Results;
+load(strcat(d_folderTS(1:11), '__outP1.mat'));
+load(strcat(d_folderTS(1:11), '__outP2.mat'));
+load(strcat(d_folderTS(1:11), '__outP3.mat'));
+load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
 
 nX=2;
 nY=2;
@@ -103,7 +112,7 @@ for d_type=1:2
            ylabel('Relative Response');
         else
            xa.YTickLabel=[]; 
-           h=text(6.5/10,0.625,y_title{d_type});
+           h=text(4.3/10,0.625,y_title{d_type});
            h.Rotation=90;
            h.HorizontalAlignment='center';
            h.FontWeight='bold';
