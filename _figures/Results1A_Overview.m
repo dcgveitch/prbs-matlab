@@ -15,6 +15,8 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
 nX=3;
 nY=1;
 
+figPosition=[5, 5, 16, 7];
+
 sizeXMOff=0.07;
 sizeYMOff=0.07;
 sizeXTotal=0.9;
@@ -48,8 +50,8 @@ d_figAve=1;
 fileConc={'Theory' 'LTI' 'Noise' 'Sensor'};
 d_concNoNoise=[1 2];
 
-for d_out1=1:5 %nZones
-    for d_out2=1:4 %Conc
+for d_out1=5 %nZones
+    for d_out2=1 %Conc
         if d_out1<5, req_i(3)={d_out1};
         else req_i(3)={1:length(unique(r_nZones))};
         end
