@@ -91,7 +91,11 @@ for d_perm=1:setup_nPerm
         for d_zone=1:setup_nModelZones
             d_geoRefZone = strcat(num2str(ind_geoRef{d_perm}),'_',num2str(d_zone));
             ind_zoneVol(d_perm,d_zone) = in_inputGeo{find(strcmp(d_geoRefZone,in_inputGeo(:,1))),find(strcmp('zoneVol',in_inputGeo(1,:)))};
-            ind_zoneVolGain(d_perm,d_zone) = 1/ind_zoneVol(d_perm,d_zone);
+            if ind_zoneVol(d_perm,d_zone)==0
+                ind_zoneVolGain(d_perm,d_zone) = 0;
+            else
+                ind_zoneVolGain(d_perm,d_zone) = 1/ind_zoneVol(d_perm,d_zone);
+            end
         end
     end
 end
@@ -338,13 +342,15 @@ for d_perm=1:setup_nPerm
                 end
             end
             r_failReselect(d_sim)=d_failReselect;
-            d_flow=d_flowTest;      
+            d_flow=d_flowTest;
             
-        elseif (r_afType(d_sim,1)=='O')
-            % If airflows are a MC variable WITH ONE WAY INTERNAL FLOWS
+        elseif (r_afType(d_sim,1)=='E')
+            % If airflows are a MC variable WITH AN ISOLATED ZONE WITH NO
+            % INTERNAL FLOWS
             d_formatStr='%f';
             d_temp=sscanf(char(ind_afRefsStr{d_perm}),d_formatStr);
-            r_afRefs{d_sim}=d_temp;             
+            r_afRefs{d_sim}=d_temp;
+            d_flowTest=zeros(r_nZones(d_sim),r_nZones(d_sim));
             
             d_failFlag=1;
             d_failReselect=-1;
@@ -358,37 +364,235 @@ for d_perm=1:setup_nPerm
                 d_split=(d_split(2:end)-d_split(1:end-1))'.*r_zoneVol(d_sim,1:r_nZones(d_sim));
                 d_split=d_split*d_totalVol/sum(d_split);
                 r_flowExt(d_sim,1:r_nZones(d_sim))=d_split./r_zoneVol(d_sim,1:r_nZones(d_sim));
-
+                d_flowTest(1,1) = d_split(1); % Zone1 is the external only
+                
                 d_failReselect=d_failReselect+1;
                 d_failCount=-1;
                 while d_failFlag>0 && d_failCount<50000
                     d_failFlag=0;
-                    d_flowTest=[];
                     d_failCount=d_failCount+1;
                     
                     % New weighted assignment of internal flows
                     d_totalVol=sum(r_zoneVol(d_sim,:))*d_int;
-                    d_split=sort(rand(r_nZones(d_sim)-1,1));
+                    d_split=sort(rand((r_nZones(d_sim)-1)*(r_nZones(d_sim)-2)-1,1));
                     d_split=[0; d_split; 1];
                     d_zoneWeight=[];
-                    for d_zone1=1:r_nZones(d_sim)
-                        d_zoneWeight(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,rem(d_zone1,r_nZones(d_sim))+1);
+                    for d_zone1=2:r_nZones(d_sim)
+                        for d_zone2=2:r_nZones(d_sim)
+                            if (d_zone1~=d_zone2)
+                                d_zoneWeight(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone2);
+                            end
+                        end
                     end
                     d_split=(d_split(2:end)-d_split(1:end-1))'.*d_zoneWeight;
                     d_split=d_split*d_totalVol/sum(d_split);
                     
                     d_count=1;                              
+                    for d_zone1=2:r_nZones(d_sim)
+                        for d_zone2=2:r_nZones(d_sim)
+                            if (d_zone1==d_zone2)
+                                d_flowTest(d_zone1,d_zone2) = r_flowExt(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone1);
+                            else
+                                d_flowTest(d_zone1,d_zone2) = d_split(d_count);
+                                r_flowIntSplit{d_sim}(d_zone1,d_zone2)=d_split(d_count)/r_zoneVol(d_sim,d_zone1);
+                                d_count=d_count+1;
+                            end
+                        end
+                    end
+
+                    for d_zone=1:r_nZones(d_sim) % Check internal flows are not driving extra exfiltration
+                        if (sum(d_flowTest(d_zone,:),2)<(sum(d_flowTest(:,d_zone),1)-d_flowTest(d_zone,d_zone)))
+                            d_failFlag=1;
+                        end
+                    end
+                end
+            end
+            r_failReselect(d_sim)=d_failReselect;
+            d_flow=d_flowTest;
+            
+        elseif (r_afType(d_sim,1)=='I')
+            % If airflows are a MC variable WITH AN ISOLATED ZONE WITH NO
+            % EXTERNAL FLOWS
+            
+            d_formatStr='%f';
+            d_temp=sscanf(char(ind_afRefsStr{d_perm}),d_formatStr);
+            r_afRefs{d_sim}=d_temp;
+            d_flowTest=zeros(r_nZones(d_sim),r_nZones(d_sim));
+            
+            d_failFlag=1;
+            d_failReselect=-1;
+            while d_failFlag>0
+                d_ext=random('logn',log(r_afRefs{d_sim}(1)),setup_mFlowExtLogSD,1,1);
+                d_int=random('logn',log(r_afRefs{d_sim}(2)),setup_mFlowIntLogSD,1,1);
+                
+                d_totalVol=sum(r_zoneVol(d_sim,:))*d_ext;
+                d_split=sort(rand(r_nZones(d_sim)-2,1));
+                d_split=[0; d_split; 1];
+                d_split=(d_split(2:end)-d_split(1:end-1))'.*r_zoneVol(d_sim,2:r_nZones(d_sim));
+                d_split=d_split*d_totalVol/sum(d_split);
+                r_flowExt(d_sim,2:r_nZones(d_sim))=d_split./r_zoneVol(d_sim,2:r_nZones(d_sim));
+
+                d_failReselect=d_failReselect+1;
+                d_failCount=-1;
+                while d_failFlag>0 && d_failCount<50000
+                    d_failFlag=0;
+                    d_failCount=d_failCount+1;
+                    
+                    % New weighted assignment of internal flows
+                    d_totalVol=sum(r_zoneVol(d_sim,:))*d_int;
+                    d_split=sort(rand(r_nZones(d_sim)*(r_nZones(d_sim)-1)-1,1));
+                    d_split=[0; d_split; 1];
+                    d_zoneWeight=[];
+                    for d_zone1=1:r_nZones(d_sim)
+                        for d_zone2=1:r_nZones(d_sim)
+                            if (d_zone1~=d_zone2)
+                                d_zoneWeight(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone2);
+                            end
+                        end
+                    end
+                    d_split=(d_split(2:end)-d_split(1:end-1))'.*d_zoneWeight;
+                    d_split=d_split*d_totalVol/sum(d_split);
+                    
+                    %Calculate Volume assigned to Z1
+                    d_totalVolZ1=0;
+                    d_count=1;                              
+                    for d_zone1=1:r_nZones(d_sim)
+                        for d_zone2=1:r_nZones(d_sim)
+                            if (d_zone1~=d_zone2)
+                                if (d_zone1==1 || d_zone2==1)
+                                    d_totalVolZ1=d_totalVolZ1+d_split(d_count);
+                                end
+                                d_count=d_count+1;
+                            end
+                        end
+                    end
+                    
+                    % Split between in/out and individual zones
+                    d_totalVolZ1=d_totalVolZ1/2;
+                    d_splitO=sort(rand((r_nZones(d_sim)-1)-1,1));
+                    d_splitO=[0; d_splitO; 1];
+                    d_zoneWeightO=[];
+                    d_splitI=sort(rand((r_nZones(d_sim)-1)-1,1));
+                    d_splitI=[0; d_splitI; 1];
+                    d_zoneWeightI=[];
+                    
+                    for d_zone1=1:r_nZones(d_sim)
+                        for d_zone2=1:r_nZones(d_sim)
+                            if (d_zone1~=d_zone2)
+                                if (d_zone1==1) % Outgoing
+                                    d_zoneWeightO(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone2);
+                                elseif (d_zone2==1) % Incoming
+                                    d_zoneWeightI(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone2);
+                                end
+                            end
+                        end
+                    end
+                    d_splitO=(d_splitO(2:end)-d_splitO(1:end-1))'.*d_zoneWeightO;
+                    d_splitO=d_splitO*d_totalVolZ1/sum(d_splitO);
+                    d_splitI=(d_splitI(2:end)-d_splitI(1:end-1))'.*d_zoneWeightI;
+                    d_splitI=d_splitI*d_totalVolZ1/sum(d_splitI);
+                    
+                    d_count=1;
+                    d_countO=1;
+                    d_countI=1;
                     for d_zone1=1:r_nZones(d_sim)
                         for d_zone2=1:r_nZones(d_sim)
                             if (d_zone1==d_zone2)
                                 d_flowTest(d_zone1,d_zone2) = r_flowExt(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone1);
-                            elseif (d_zone2==rem(d_zone1,r_nZones(d_sim))+1)
+                            else
+                                if (d_zone1==1) % Outgoing
+                                    d_flowTest(d_zone1,d_zone2) = d_splitO(d_countO);
+                                    d_countO=d_countO+1;
+                                elseif (d_zone2==1) % Incoming
+                                    d_flowTest(d_zone1,d_zone2) = d_splitI(d_countI);
+                                    d_countI=d_countI+1;
+                                else
+                                    d_flowTest(d_zone1,d_zone2) = d_split(d_count);
+                                end
+                                r_flowIntSplit{d_sim}(d_zone1,d_zone2)=d_flowTest(d_zone1,d_zone2)/r_zoneVol(d_sim,d_zone1);
+                                d_count=d_count+1;
+                            end
+                        end
+                    end
+
+                    for d_zone=1:r_nZones(d_sim) % Check internal flows are not driving extra exfiltration
+                        if (sum(d_flowTest(d_zone,:),2)<(sum(d_flowTest(:,d_zone),1)-d_flowTest(d_zone,d_zone)))
+                            d_failFlag=1;
+                        end
+                    end
+                end
+            end
+            r_failReselect(d_sim)=d_failReselect;
+            d_flow=d_flowTest;
+            
+        elseif (r_afType(d_sim,1)=='O')
+            % If airflows are a MC variable WITH ONE WAY INTERNAL FLOWS
+            d_formatStr='%f';
+            d_temp=sscanf(char(ind_afRefsStr{d_perm}),d_formatStr);
+            r_afRefs{d_sim}=d_temp;
+            d_flowTest=zeros(r_nZones(d_sim),r_nZones(d_sim));
+            
+            d_failFlag=1;
+            d_failReselect=-1;
+            while d_failFlag>0
+                d_ext=random('logn',log(r_afRefs{d_sim}(1)),setup_mFlowExtLogSD,1,1);
+                d_int=random('logn',log(r_afRefs{d_sim}(2)),setup_mFlowIntLogSD,1,1);
+                
+                d_totalVol=sum(r_zoneVol(d_sim,:))*d_ext;
+                d_split=sort(rand(r_nZones(d_sim)-2,1));
+                d_split=[0; d_split; 1];
+                d_split=(d_split(2:end)-d_split(1:end-1))'.*r_zoneVol(d_sim,2:r_nZones(d_sim));
+                d_split=d_split*d_totalVol/sum(d_split);
+                r_flowExt(d_sim,1)=0;
+                r_flowExt(d_sim,2:r_nZones(d_sim))=d_split./r_zoneVol(d_sim,2:r_nZones(d_sim));
+                
+                % Split external exit flow between other zones
+                d_totalVol=d_split(end);
+                d_split=sort(rand((r_nZones(d_sim)-1)-1,1));
+                d_split=[0; d_split; 1];
+                d_split=(d_split(2:end)-d_split(1:end-1))'.*r_zoneVol(d_sim,1:r_nZones(d_sim)-1);
+                d_split=d_split*d_totalVol/sum(d_split);
+                      
+                d_count=1;
+                for d_zone1=1:r_nZones(d_sim)
+                    if (d_zone1==r_nZones(d_sim))
+                        d_flowTest(d_zone1,r_nZones(d_sim)) = d_totalVol;
+                    else
+                        d_flowTest(d_zone1,r_nZones(d_sim)) = d_split(d_count);
+                        d_count=d_count+1;
+                    end
+                end
+
+                d_failReselect=d_failReselect+1;
+                d_failCount=-1;
+                while d_failFlag>0 && d_failCount<50000
+                    d_failFlag=0;
+                    d_failCount=d_failCount+1;
+                    
+                    % New weighted assignment of internal flows
+                    d_totalVol=sum(r_zoneVol(d_sim,:))*d_int-d_flowTest(r_nZones(d_sim),r_nZones(d_sim));
+                    d_split=sort(rand(((r_nZones(d_sim)-3)*(r_nZones(d_sim)-1)+1)-1,1));
+                    d_split=[0; d_split; 1];
+                    d_zoneWeight=[];
+                    for d_zone1=1:r_nZones(d_sim)-1
+                        for d_zone2=2:r_nZones(d_sim)-1
+                            if (d_zone1~=d_zone2)
+                                d_zoneWeight(end+1)=r_zoneVol(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone2);
+                            end
+                        end
+                    end
+                    d_split=(d_split(2:end)-d_split(1:end-1))'.*d_zoneWeight;
+                    d_split=d_split*d_totalVol/sum(d_split);
+                    
+                    d_count=1;                              
+                    for d_zone1=1:r_nZones(d_sim)-1
+                        for d_zone2=2:r_nZones(d_sim)-1
+                            if (d_zone1==d_zone2)
+                                d_flowTest(d_zone1,d_zone2) = r_flowExt(d_sim,d_zone1)*r_zoneVol(d_sim,d_zone1);
+                            else
                                 d_flowTest(d_zone1,d_zone2) = d_split(d_count);
                                 r_flowIntSplit{d_sim}(d_zone1,d_zone2)=d_split(d_count)/r_zoneVol(d_sim,d_zone1);
                                 d_count=d_count+1;
-                            else
-                                d_flowTest(d_zone1,d_zone2) = 0;
-                                r_flowIntSplit{d_sim}(d_zone1,d_zone2)=0;
                             end
                         end
                     end
@@ -876,35 +1080,51 @@ for d_batch=1:d_nBatch
         sim_prbsFlow=[];
         sim_prbsSensConc=[];   
 
-        if (clc_afType(1)=='S' | clc_afType(1)=='F') 
-            %% Simulation for PFT comparison
-            % Update tracer to continuous at half rate
-            for d_i=1:clc_nZones
-                if (clc_mixModel==1)
-                    clc_tSchedule{d_i+clc_nZones}(:,2)=ones;
-                else
-                    clc_tSchedule{d_i}(:,2)=ones;
+        if (clc_afType(1)=='S' | clc_afType(1)=='F')
+            clc_tScheduleRef=clc_tSchedule;
+            d_pftConc=[];
+            d_pftTracer=[];
+            for d_zone=1:clc_nZones+1
+                clc_tSchedule=clc_tScheduleRef;
+                %% Simulation for PFT comparison
+                % Update tracer to continuous at half rate
+                for d_i=1:clc_nZones
+                    if (d_zone-1)==d_i || d_zone==1
+                        if (clc_mixModel==1)
+                            clc_tSchedule{d_i+clc_nZones}(:,2)=ones;
+                        else
+                            clc_tSchedule{d_i}(:,2)=ones;
+                        end
+                    else
+                        if (clc_mixModel==1)
+                            clc_tSchedule{d_i+clc_nZones}(:,2)=zeros;
+                        else
+                            clc_tSchedule{d_i}(:,2)=zeros;
+                        end
+                    end
                 end
+
+                clc_releaseRateSimPFT=clc_releaseRateSim/2;
+
+                assignin('base','sim_tSchedule',clc_tSchedule);
+                assignin('base','sim_releaseRate',clc_releaseRateSimPFT);
+
+                disp(['PFT Sim ' datestr(now)]);
+                [sim_pftT,sim_pftX,sim_pftConc,sim_pftTracer,sim_pftFlow,sim_pftSensConc]=sim('PRBS_Para',clc_nDays*24);
+
+                d_pftConc{d_zone}=sim_pftConc(:,1:clc_tZones);
+                d_pftTracer{d_zone}=sim_pftTracer(1,1:clc_tZones);
+
+                % Clear large variables
+                sim_pftT=[];
+                sim_pftX=[];
+                sim_pftConc=[];
+                sim_pftTracer=[];
+                sim_pftFlow=[];
+                sim_pftSensConc=[];
             end
-
-            clc_releaseRateSimPFT=clc_releaseRateSim/2;
-
-            assignin('base','sim_tSchedule',clc_tSchedule);
-            assignin('base','sim_releaseRate',clc_releaseRateSimPFT);
-            
-            disp(['PFT Sim ' datestr(now)]);
-            [sim_pftT,sim_pftX,sim_pftConc,sim_pftTracer,sim_pftFlow,sim_pftSensConc]=sim('PRBS_Para',clc_nDays*24);
-
-            outB_pftConc{ref_perm}=sim_pftConc(:,1:clc_tZones);
-            outB_pftTracer{ref_perm}=sim_pftTracer(1,1:clc_tZones);
-
-            % Clear large variables
-            sim_pftT=[];
-            sim_pftX=[];
-            sim_pftConc=[];
-            sim_pftTracer=[];
-            sim_pftFlow=[];
-            sim_pftSensConc=[];
+            outB_pftConc{ref_perm}=d_pftConc;
+            outB_pftTracer{ref_perm}=d_pftTracer;
         else
             %% Direct impulse simulation for noise comparison
             sim_impT=[];
