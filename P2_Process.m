@@ -15,13 +15,13 @@ mat_outP1=matfile(strcat(d_folderTS(1:11), '__outP1.mat'),'Writable',true);
 mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 
 d_reqSolve=[1 4 5];
-d_reqImp=[1];
-d_reqConc=[1 4];
+d_reqImp=[1 2];
+d_reqConc=[1 6 7];
 
 save(strcat(d_folderTS(1:11), '_setup.mat'), 'd_req*', '-append')
 
 setup_batchSize=setup_nMC;
-setup_batchProc=35;
+setup_batchProc=25;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
@@ -61,7 +61,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
     
     disp(['Processing Batch ' num2str(d_batch) '/' num2str(ceil(length(d_batchRef)/setup_batchProc))]);
     
-    for ref_bPerm = 1:d_batchSize
+    parfor ref_bPerm = 1:d_batchSize
         disp([' -Run ' num2str(ref_bPerm) '/' num2str(d_batchSize)]);
 
         %% Assign temporary variables
@@ -91,6 +91,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_ndt = clc_nSeq * clc_seqLength * clc_seqMultiple;
         clc_dt = clc_seqPeriod*60*60/(clc_seqLength*clc_seqMultiple); % Seconds
         clc_dth = clc_seqPeriod/(clc_seqLength*clc_seqMultiple); % Hours
+        clc_nRunSeqFull=clc_nDays*24/clc_seqPeriod;
         clc_nRunSeq=(clc_nDays-setup_nDaysStab)*24/clc_seqPeriod;
         
         sim_inputFull=cell2mat(mat_outP1.out_input(1,d_batchRun(ref_bPerm)));
@@ -114,19 +115,18 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         sim_impulse=[];
         clc_sensorSpec=[];
 
+        % Save copy of full discrete trace first
         d_count=1;
-        for d_i=1:clc_cSeqLength*clc_nRunSeq;
-            while round(clc_stepSize*(d_count-1)*10^7) < round((setup_nDaysStab*24+(d_i*clc_dth))*10^7);
+        for d_i=1:clc_cSeqLength*clc_nRunSeqFull;
+            while round(clc_stepSize*(d_count-1)*10^7) < round(((d_i*clc_dth))*10^7);
                 d_count=d_count+1;
             end
             sim_conc{1}(d_i,1:clc_tZones)=sim_prbsConc(d_count,1:clc_tZones);
             sim_conc{5}(d_i,1:clc_tZones)=sim_prbsSensConc(d_count,1:clc_tZones);
         end
-
+        
         sim_prbsConc=[];
         sim_prbsSensConc=[];
-        outB_prbsConcDisc{ref_bPerm}{1}=sim_conc{1};
-        outB_prbsConcDisc{ref_bPerm}{2}=sim_conc{2};
 
         % Sensor Spec MC
         if clc_randSeeds(4)==0
@@ -180,7 +180,19 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                 sim_conc{8}=sim_conc{6};
             end
         end
-
+        
+        % Trim stabilisation period from full traces
+        d_trim=setup_nDaysStab*clc_ndt;
+        for d_i=1:7
+            outB_prbsConcDisc{ref_bPerm}{d_i}=sim_conc{d_i}(:,:,1);
+            sim_conc{d_i}=sim_conc{d_i}(d_trim+1:end,:,:);
+        end
+        
+        if (ismember(8,d_reqConc))
+            outB_prbsConcDisc{ref_bPerm}{8}=sim_conc{8}(:,:,1);
+            sim_conc{8}=sim_conc{8}(d_trim+1:end,:,:);
+        end
+            
         % Direct impulse traces
         if (ismember(3,d_reqImp))
             sim_impulseRaw=cell2mat(mat_outP1.out_impulseSim(1,d_batchRun(ref_bPerm)))/1000;
