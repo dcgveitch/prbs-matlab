@@ -14,7 +14,7 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...')
 mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
 mkdir('P6');
 cd P6;
-mat_outP6=matfile(strcat(d_folderTS(1:11), '__outP6Single.mat'),'Writable',true);
+mat_outP6=matfile(strcat(d_folderTS(1:11), '__outP6.mat'),'Writable',true);
 
 d_reqTSeqA=[1 2];
 
@@ -23,7 +23,7 @@ ind_2_Group=unique(r_seqPeriod);
 ind_3_Group=unique(r_nZones);
 
 setup_batchSize=setup_nMC;
-setup_batchProc=95;
+setup_batchProc=100;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
@@ -80,7 +80,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                         for d_conc=d_reqConc
                             for d_flowType=1:4
                                 try
-                                    d_flowProcess=clc_flowResults{d_solve,d_flowType}
+                                    d_flowProcess=clc_flowResults{d_solve,d_flowType};
                                     d_flowProcess{1,1}{d_tSeqA,d_nSeqA};
                                 catch
                                     continue;
@@ -95,6 +95,12 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                 d_nNoise=size(d_flowProcess{1,1}{d_tSeqA,d_nSeqA}{d_impulse,d_conc},2)-2;
                                 d_ndt=size(d_flowProcess{1,1}{d_tSeqA,d_nSeqA}{d_impulse,d_conc},1);
 
+                                try
+                                    outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType};
+                                catch
+                                    outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType}=[];
+                                end
+
                                 d_flowTotal=zeros(d_ndt,1);
                                 % Total flow for airflow type
                                 for d_flow1=1:d_nFlow1
@@ -104,11 +110,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                         d_flowTotal=d_flowTotal+abs(d_flowProcessP(:,2));
                                     end
                                 end
-                                out_flowTotal(d_batchRun(ref_bPerm),d_flowType)=d_flowTotal;
-                                
-                                d_count3=1;
-                                d_resultsCombined=[];
-                                d_resultsCombinedSum=[];
+
                                 % Output airflow and weight
                                 for d_dt=1:d_ndt
                                     for d_flow1=1:d_nFlow1
@@ -117,20 +119,13 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                             d_flowProcessP=d_flowProcess{d_flow1,d_flow2}{d_tSeqA,d_nSeqA}{d_impulse,d_conc}';
 
                                             % Individual raw results with references
-                                            d_resultsCombined(d_count3,1)=abs(d_flowProcessP(2,d_dt))/d_flowTotal(d_dt)/d_ndt/d_nNoise; 
-                                            d_resultsCombined(d_count3,2)=(d_flowProcessP(3,d_dt)-d_flowProcessP(2,d_dt))/d_flowProcessP(2,d_dt); % Only processing single version of flow
-                                            d_resultsCombinedSum(d_count3,1)=d_flowProcessP(3,d_dt);
-                                            d_resultsCombinedSum(d_count3,2)=d_flowProcessP(2,d_dt); % WILL NOT WORK FOR MULTIPLE TIME STEPS OR NOISE CASES
+                                            outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType}{end+1,1}=[d_batchRun(ref_bPerm) clc_nZones d_flowCount d_dt d_flowProcessP(2,d_dt) d_flowProcessP(2,d_dt)/d_flowTotal(d_dt)/d_ndt/d_nNoise]; 
+                                            outB_resultsCombined{ind_1,ind_2,ind_3,d_solve,d_impulse,d_nSeqA,d_tSeqA,d_conc,d_flowType}{end,2}=(d_flowProcessP(3:end,d_dt)-d_flowProcessP(2,d_dt))/d_flowProcessP(2,d_dt);
                                             d_count=d_count+d_nNoise;
-                                            d_count3=d_count3+1;
                                         end
                                     end
-                                end
-                                out_resultsCombined(d_batchRun(ref_bPerm),d_flowType)=sum(d_resultsCombined(:,1).*d_resultsCombined(:,2));
-                                out_resultsCombinedSum(d_batchRun(ref_bPerm),d_flowType)=(sum(d_resultsCombinedSum(:,1))-sum(d_resultsCombinedSum(:,2)))/sum(d_resultsCombinedSum(:,2));
-                            end
-                            out_resultsCombined(d_batchRun(ref_bPerm),5)=clc_nZones;
-                            out_resultsCombined(d_batchRun(ref_bPerm),6)=(out_flowTotal(d_batchRun(ref_bPerm),3)-out_flowTotal(d_batchRun(ref_bPerm),1))/(2*out_flowTotal(d_batchRun(ref_bPerm),1));
+                                end   
+                            end          
                         end
                     end
                 end 
@@ -139,14 +134,21 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         disp([' --Count ' num2str(d_count)]);
     end
     
+    if(~isempty(d_batchList))
+        d_bL=unique(d_batchList,'rows');
+        for d_i=1:size(d_bL,1)
+            filename=[num2str(d_bL(d_i,1)) '_' num2str(d_bL(d_i,2)) '_' num2str(d_bL(d_i,3)) '_' num2str(d_bL(d_i,4)) '_' num2str(d_bL(d_i,5)) '_' num2str(d_bL(d_i,6)) '_' num2str(d_bL(d_i,7)) '_' num2str(d_bL(d_i,8)) '_' num2str(d_bL(d_i,9))];
+            out_results=outB_resultsCombined{d_bL(d_i,1),d_bL(d_i,2),d_bL(d_i,3),d_bL(d_i,4),d_bL(d_i,5),d_bL(d_i,6),d_bL(d_i,7),d_bL(d_i,8),d_bL(d_i,9)};
+            save(filename,'out_results','-v6');
+            clear out_results;
+        end
+    end
+    
     clear outB_* d_in;
 end
 
 d_procTime=toc
 mat_outP6.d_procTime=d_procTime;
-mat_outP6.out_resultsCombined=out_resultsCombined;
-mat_outP6.out_resultsCombinedSum=out_resultsCombinedSum;
-mat_outP6.out_flowTotal=out_flowTotal;
 cd ../..;
 
 
