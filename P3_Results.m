@@ -15,7 +15,7 @@ mat_outP2=matfile(strcat(d_folderTS(1:11), '__outP2.mat'),'Writable',true);
 mat_outP3=matfile(strcat(d_folderTS(1:11), '__outP3.mat'),'Writable',true);
 
 setup_batchSize=setup_nMC;
-setup_batchProc=10;
+setup_batchProc=100;
 setup_batchTrim=setup_nMC;
 d_batchRef=[];
 
@@ -86,7 +86,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
         clc_simFlowTimeFull=rB_simFlowTimeFull{ref_bPerm};
         clc_flow=rB_flow{ref_bPerm};
 
-        %% Total External flow
+        %% External - Total
         for d_solve=d_reqSolve
             for d_seqA=clc_nSeqAverage
                 if (clc_afType=='S' || clc_afType=='F')
@@ -128,7 +128,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
             end
         end
 
-        %% Zone flow - Exfiltration
+        %% External - Exfiltration
         for d_zone=1:clc_nZones
             for d_solve=d_reqSolve
                  for d_seqA=clc_nSeqAverage
@@ -172,7 +172,7 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
             end
         end
 
-        %% Zone flow - Infiltration
+        %% External - Infiltration
         for d_zone=1:clc_nZones
             for d_solve=d_reqSolve
                  for d_seqA=clc_nSeqAverage
@@ -229,10 +229,66 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                 end
             end
         end
+        
+        %% Internal - Total
+        for d_solve=d_reqSolve
+            for d_seqA=clc_nSeqAverage
+                if (clc_afType=='S' || clc_afType=='F')
+                    d_seqVlim=clc_nRunSeq-d_seqA;
+                else
+                    d_seqVlim=1;
+                end
+                d_3DFlow=[];
+                d_3DFlow1=[];
+                d_3DFlow2=[];
+                for d_imp=d_reqImp
+                    if (d_imp==3 && d_seqA>1)
+                        continue;
+                    end
+                    for d_conc=d_reqConc
+                        d_3DFlow(:,1)=clc_simFlowTime{d_seqA}(1:d_seqVlim,:);
+                        d_3DFlow(:,2)=sum(clc_simFlow{d_seqA}(1:d_seqVlim,:),2);
+                        for d_k=1:clc_nZones 
+                            d_3DFlow(:,2)=d_3DFlow(:,2)-clc_simFlow{d_seqA}(1:d_seqVlim,(d_k-1)*clc_nZones+d_k);
+                        end
+                        d_3DFlow1{d_imp,d_conc}(:,1:2)=d_3DFlow;
+                        d_nNoise=size(clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA},3);
+                        for d_noise=1:d_nNoise
+                            d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=sum(clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA}(1:d_seqVlim,:,d_noise),2);
+                            for d_k=1:clc_nZones 
+                                d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=d_3DFlow1{d_imp,d_conc}(:,2+d_noise)-clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA}(1:d_seqVlim,(d_k-1)*clc_nZones+d_k,d_noise);
+                            end
+                        end
 
-        %% Individual flows
-        for d_zone1=1:clc_nZones+1
-            for d_zone2=1:clc_nZones
+                        if (d_seqA>1)
+                            d_3DFlow2{d_imp,d_conc}(:,1:2)=d_3DFlow;
+                            d_nNoise=size(clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA},3);
+                            for d_noise=1:d_nNoise
+                                d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=sum(clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA}(1:d_seqVlim,:,d_noise),2);
+                                for d_k=1:clc_nZones 
+                                    d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=d_3DFlow2{d_imp,d_conc}(:,2+d_noise)-clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA}(1:d_seqVlim,(d_k-1)*clc_nZones+d_k,d_noise);
+                                end
+                            end
+                        end
+
+                    end
+                end
+
+                clc_flowResults{d_solve,3}{1}{1,find(clc_nSeqAverage==d_seqA)}=d_3DFlow1;
+                if (d_seqA>1)
+                    clc_flowResults{d_solve,3}{1}{2,find(clc_nSeqAverage==d_seqA)}=d_3DFlow2;
+                end
+            end
+        end
+
+        %% Internal - Individual
+        for d_zone1=1:clc_nZones
+            for d_zone2=1:clc_nZones-1
+                if (d_zone2>=d_zone1)
+                    d_zone2n=d_zone2+1;
+                else
+                    d_zone2n=d_zone2;
+                end
                 for d_solve=d_reqSolve
                     for d_seqA=clc_nSeqAverage
                         if (clc_afType=='S' || clc_afType=='F')
@@ -249,43 +305,25 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                             end
                             for d_conc=d_reqConc
                                 d_3DFlow(:,1)=clc_simFlowTime{d_seqA}(1:d_seqVlim,:);
-                                if (d_zone1==d_zone2) % Zone exfiltration
-                                    d_3DFlow(:,2)=clc_flowResults{d_solve,2}{1,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2);
-                                elseif (d_zone1==clc_nZones+1) % Zone infiltration
-                                    d_3DFlow(:,2)=clc_flowResults{d_solve,2}{2,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2);
-                                else
-                                    d_3DFlow(:,2)=clc_simFlow{d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2);
-                                end
+                                d_3DFlow(:,2)=clc_simFlow{d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2n);
                                 d_3DFlow1{d_imp,d_conc}(:,1:2)=d_3DFlow;
                                 d_nNoise=size(clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA},3);
                                 for d_noise=1:d_nNoise
-                                    if (d_zone1==d_zone2) % Zone exfiltration
-                                        d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=clc_flowResults{d_solve,2}{1,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2+d_noise);
-                                    elseif (d_zone1==clc_nZones+1) % Zone infiltration
-                                        d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=clc_flowResults{d_solve,2}{2,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2+d_noise);
-                                    else
-                                        d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2,d_noise);
-                                    end
+                                    d_3DFlow1{d_imp,d_conc}(:,2+d_noise)=clc_flow{d_solve}{d_imp,d_conc}{1,d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2n,d_noise);
                                 end
 
                                 if (d_seqA>1)
                                     d_3DFlow2{d_imp,d_conc}(:,1:2)=d_3DFlow;
                                     d_nNoise=size(clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA},3);
                                     for d_noise=1:d_nNoise
-                                        if (d_zone1==d_zone2) % Zone exfiltration
-                                            d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=clc_flowResults{d_solve,2}{1,d_zone2}{2,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2+d_noise);
-                                        elseif (d_zone1==clc_nZones+1) % Zone infiltration
-                                            d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=clc_flowResults{d_solve,2}{2,d_zone2}{2,find(clc_nSeqAverage==d_seqA)}{d_imp,d_conc}(:,2+d_noise);
-                                        else
-                                            d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2,d_noise);
-                                        end
+                                        d_3DFlow2{d_imp,d_conc}(:,2+d_noise)=clc_flow{d_solve}{d_imp,d_conc}{2,d_seqA}(1:d_seqVlim,(d_zone1-1)*clc_nZones+d_zone2n,d_noise);
                                     end
                                 end
                             end
                         end
-                        clc_flowResults{d_solve,3}{d_zone1,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}=d_3DFlow1;
+                        clc_flowResults{d_solve,4}{d_zone1,d_zone2}{1,find(clc_nSeqAverage==d_seqA)}=d_3DFlow1;
                         if (d_seqA>1)
-                            clc_flowResults{d_solve,3}{d_zone1,d_zone2}{2,find(clc_nSeqAverage==d_seqA)}=d_3DFlow2;
+                            clc_flowResults{d_solve,4}{d_zone1,d_zone2}{2,find(clc_nSeqAverage==d_seqA)}=d_3DFlow2;
                         end
                     end
                 end

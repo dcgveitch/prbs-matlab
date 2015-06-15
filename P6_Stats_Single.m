@@ -78,16 +78,9 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                 for d_nSeqA=d_reqNSeqA
                     for d_tSeqA=d_reqTSeqA
                         for d_conc=d_reqConc
-                            for d_flowType=1:3
+                            for d_flowType=1:4
                                 try
-                                    switch d_flowType
-                                        case 1
-                                            d_flowProcess=clc_flowResults{d_solve,d_flowType}(1,1);
-                                        case 2
-                                            d_flowProcess=clc_flowResults{d_solve,d_flowType}(2,:);
-                                        case 3
-                                            d_flowProcess=clc_flowResults{d_solve,d_flowType}(1:end,:);
-                                    end
+                                    d_flowProcess=clc_flowResults{d_solve,d_flowType}
                                     d_flowProcess{1,1}{d_tSeqA,d_nSeqA};
                                 catch
                                     continue;
@@ -136,8 +129,8 @@ for d_batch=1:ceil(length(d_batchRef)/setup_batchProc)
                                 out_resultsCombined(d_batchRun(ref_bPerm),d_flowType)=sum(d_resultsCombined(:,1).*d_resultsCombined(:,2));
                                 out_resultsCombinedSum(d_batchRun(ref_bPerm),d_flowType)=(sum(d_resultsCombinedSum(:,1))-sum(d_resultsCombinedSum(:,2)))/sum(d_resultsCombinedSum(:,2));
                             end
-                            out_resultsCombined(d_batchRun(ref_bPerm),4)=clc_nZones;
-                            out_resultsCombined(d_batchRun(ref_bPerm),5)=(out_flowTotal(d_batchRun(ref_bPerm),3)-out_flowTotal(d_batchRun(ref_bPerm),1))/(2*out_flowTotal(d_batchRun(ref_bPerm),1));
+                            out_resultsCombined(d_batchRun(ref_bPerm),5)=clc_nZones;
+                            out_resultsCombined(d_batchRun(ref_bPerm),6)=(out_flowTotal(d_batchRun(ref_bPerm),3)-out_flowTotal(d_batchRun(ref_bPerm),1))/(2*out_flowTotal(d_batchRun(ref_bPerm),1));
                         end
                     end
                 end 
