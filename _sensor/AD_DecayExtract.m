@@ -1,4 +1,4 @@
-for test=1:4
+for test=5:6
     in_summary=in_data{test};
     clear d_*;
     d_state=[7 8];
