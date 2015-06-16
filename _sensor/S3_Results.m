@@ -1,3 +1,14 @@
+req_i(1)={[1]}; % flowType
+req_i(2)={[1 2 3 4]}; % sens
+req_i(3)={[5]}; % solver
+req_i(4)={[2]}; % impulse
+req_i(5)={[1 2]}; % tSeqAve
+req_i(6)={1:clc_nSeqAverage}; % nSeqAve
+
+% Select grouping dimensions
+% 1st=Subplot 2nd=XAxis 3rd=Group
+groupDims=[5 6];
+
 d_req_i=req_i;
 
 nGroup(1:5)=1;
@@ -10,10 +21,11 @@ for i=1:length(groupDims)
 end
 
 d_count=1;
+missingData=0;
 
 clear out_group out_summary out_summaryHist;
 
-cd(d_dir{d_figAve});
+disp(['Group Count Total: ' num2str(d_countTotal)]);
 
 for g1=1:nGroup(1)
     d_req_i{groupDims(1)}=group{1,1}(g1);
@@ -25,7 +37,6 @@ for g1=1:nGroup(1)
                 if (length(groupDims)>=4), d_req_i{groupDims(4)}=group{4,1}(g4); end
                 for g5=1:nGroup(5)
                     if (length(groupDims)>=5), d_req_i{groupDims(5)}=group{5,1}(g5); end
-                    disp(['Group ' num2str(d_count) '/' num2str(d_countTotal)]);
                     d_summary=[];
                     %%% Start looping through permutations
                     for i1=d_req_i{1}
@@ -34,26 +45,22 @@ for g1=1:nGroup(1)
                                 for i4=d_req_i{4}
                                     for i5=d_req_i{5}
                                         for i6=d_req_i{6}
-                                            for i7=d_req_i{7}
-                                                for i8=d_req_i{8}
-                                                    for i9=d_req_i{9}
-                                                        d_input=[];
-                                                        try
-                                                            filename=[num2str(i1) '_' num2str(i2) '_' num2str(i3) '_' num2str(i4) '_' num2str(i5) '_' num2str(i6) '_' num2str(i7) '_' num2str(i8) '_' num2str(i9) '.mat'];
-                                                            load(filename);
-                                                            d_inputError=cat(1,out_results{:,2});
-                                                            d_inputWeight=cat(1,out_results{:,1});
-                                                            d_inputWeight=d_inputWeight(:,5);
-                                                            if (ismember(i8,d_concNoNoise)), d_noise=1;
-                                                            else d_noise=100; end
-                                                            d_inputWeight=reshape(repmat(d_inputWeight,1,d_noise)',[],1);
-                                                            d_input=[d_inputError d_inputWeight];
-                                                            d_summary=[d_summary; d_input];
-                                                        catch
-                                                            continue;
-                                                        end
-                                                    end
+                                            d_input=[];
+                                            try
+                                                d_inputData=out_resultsCombined{i1,i2}{i3,i4}{i5,i6};
+                                                if (i1==2)
+                                                    d_selection=find(d_inputData(:,7)>d_inputData(:,5));
+                                                    d_inputWeight=d_inputData(d_selection,4)*2;
+                                                    d_inputError=d_inputData(d_selection,3);
+                                                else
+                                                    d_inputWeight=d_inputData(:,4);
+                                                    d_inputError=d_inputData(:,3);
                                                 end
+                                                d_input=[d_inputError d_inputWeight];
+                                                d_summary=[d_summary; d_input];
+                                            catch
+                                                missingData=missingData+1;
+                                                continue;
                                             end
                                         end
                                     end
@@ -97,23 +104,20 @@ for g1=1:size(out_group,1)
                     out_summary(end,14)=wprctile(d_process(:,1),75,d_process(:,2));
                     out_summary(end,15)=wprctile(d_process(:,1),84.13,d_process(:,2));
                     out_summary(end,16)=wprctile(d_process(:,1),95,d_process(:,2));
-                    out_summary(end,17)=kurtosis(d_process(:,1));
-%                     [out_summaryHist{g1,g2,g3,g4}(:,1) out_summaryHist{g1,g2,g3,g4}(:,2)]=histwc(d_process(:,1),d_process(:,2),[-1:0.05:1]);
+                    out_summary(end,17)=out_summary(end,8);
+                    out_summary(end,18)=out_summary(end,13);               
+                    out_summary(end,19)=wstd(d_process(:,1),d_process(:,2));
+                    out_summary(end,20)=out_summary(end,13)-out_summary(end,11);
+                    out_summary(end,21)=out_summary(end,15)-out_summary(end,13);
+                    out_summary(end,22)=sum(d_process(:,2)); % Check that weights all sum to 1 for each case.
+                    [out_summaryHist{g1,g2,g3,g4}(:,1) out_summaryHist{g1,g2,g3,g4}(:,2)]=histwc(d_process(:,1),d_process(:,2),[-1:0.05:1]);
                 end
             end
         end
     end
 end
 
-cd ..
-        
-        
-        
-        
-        
-        
-
-
+disp(['Missing Data: ' num2str(missingData)]);
 
 
 

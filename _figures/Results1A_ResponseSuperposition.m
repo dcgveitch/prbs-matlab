@@ -31,9 +31,9 @@ impulseT=impulseT(1:seqLength/seqdT,:);
 nX=1;
 nY=2;
 
-sizeXMOff=0.07;
+sizeXMOff=0.25;
 sizeYMOff=0.07;
-sizeXTotal=0.9;
+sizeXTotal=0.5;
 sizeYTotal=0.78;
 sizeXPad=0.01*17/14;
 sizeYPad=0.02;
@@ -45,7 +45,7 @@ colours=pmkmp(6,'CubicL');
 
 figOut=figure;
 set(figOut,'Units','centimeters');
-set(figOut,'Position', [5, 5, 9, 7]);
+set(figOut,'Position', [5, 5, 16, 7]);
 set(figOut,'Units','pixels');
 
 set(gcf,'Renderer','Painters');    
@@ -68,7 +68,6 @@ for d_i=1:2
         xlim([0 960]);
         ylim([0 2000]);
         ylab=ylabel({'Cross-Correlation' 'Output'});
-        set(ylab,'Position',get(ylab,'Position')+[105 0 0]);
         xlabel('Monitoring Time (hours)');
         text(max(xlim)*0.01, max(ylim)*0.75,{'Equal to superposition'; 'of impulse responses'},'FontSize', 7, 'VerticalAlignment', 'Bottom');
         set(gca,...
@@ -94,7 +93,6 @@ for d_i=1:2
         line([720 720],[1050 2000],'Color','k','LineWidth', 0.2);
         line([960 960],[1050 2000],'Color','k','LineWidth', 0.2);
         ylab=ylabel({'Z1 Impulse' 'Responses'});
-        set(ylab,'Position',get(ylab,'Position')+[105 0 0]);
         set(gca,...
         'TickLength'    , [0.01 0] , ...
         'XTickLabel'    , [] , ...

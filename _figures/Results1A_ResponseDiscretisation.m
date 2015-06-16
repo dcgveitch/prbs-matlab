@@ -14,11 +14,11 @@ load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
 
 nX=2;
 nY=2;
-sizeXcm=15;
-sizeYcm=9;
-topMargincm=0.8;
-botMargincm=1.2;
-lefMargincm=1.2;
+sizeXcm=16;
+sizeYcm=6;
+topMargincm=0.4;
+botMargincm=0.7;
+lefMargincm=1.0;
 rigMargincm=0.8;
 
 sizeXMOff=lefMargincm/sizeXcm;

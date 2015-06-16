@@ -6,7 +6,7 @@ P7_Grouping;
 if (~isempty(out_summary))
     figOut=figure;
     set(figOut,'Units','centimeters');
-    set(figOut,'Position', [5, 5, 17, 7]);
+    set(figOut,'Position', figPosition);
     set(figOut,'Units','pixels');
     
     % Make list of max combinations in figure
