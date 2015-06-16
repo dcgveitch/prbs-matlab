@@ -12,17 +12,19 @@ else d_folderTS=d_folder(1:11); end
 cd Results;
 load(strcat(d_folderTS(1:11), '_setup.mat'), '-regexp', '^(?!r_flowSim)...');
 
-nX=3;
+nX=4;
+nXpad=2;
 nY=1;
+figPosition=[5, 5, 16, 7];
 
-sizeXMOff=0.07;
-sizeYMOff=0.07;
-sizeXTotal=0.9;
-sizeYTotal=0.78;
+sizeXMOff=0.05;
+sizeYMOff=0.05;
+sizeXTotal=0.94;
+sizeYTotal=0.85;
 sizeXPad=0.01;
 sizeYPad=0.01;
 
-sizeXM=(sizeXTotal-(nX-1)*sizeXPad)/nX; 
+sizeXM=(sizeXTotal-((nX-1)*sizeXPad)-(nX/nXpad-1)*sizeXPad)/nX; 
 sizeYM=(sizeYTotal-(nY-1)*sizeYPad)/nY;
 
 % What's included in the summary
@@ -35,27 +37,31 @@ req_i(5)={[1]}; % impulse
 req_i(6)={[1]}; % nSeqAve
 req_i(7)={[1]}; % tSeqAve
 req_i(8)={[1]}; % conc
-req_i(9)={[1 2 3]}; % flowType
+req_i(9)={[1 2 3 4]}; % flowType
 
 % Select grouping dimensions
 % 1st=Subplot 2nd=XAxis 3rd=Group
 groupDims=[9 2 1];
-colours=pmkmp(length(req_i{groupDims(3)})+1,'CubicL');
+colours=pmkmp(max(length(req_i{groupDims(3)})+1,3),'CubicL');
 
 d_dir{1}='P6';
 d_figAve=1;
 
 fileConc={'Theory' 'LTI' 'Noise' 'Sensor'};
+% fileConc={'Theory' '' '' '' 'LTI' 'Sensor' 'Noise' 'Reverse'};
+fileZones={'2' '3' '5' '8' 'All'};
 d_concNoNoise=[1 2];
 
-for d_out1=1:5 %nZones
-    for d_out2=1:4 %Conc
+for d_out1=5 %nZones
+    for d_out2=[1] %Conc
         if d_out1<5, req_i(3)={d_out1};
         else req_i(3)={1:length(unique(r_nZones))};
         end
         req_i{8}=d_out2;
         fileDescript=unique(r_nZones);
-        fileSaveName=[fileConc{d_out2} '_' num2str(fileDescript(req_i{3})) 'Zones.pdf'];
-        Fig_Boxplot;
+        fileSaveName1=[fileConc{d_out2} '_' fileZones{d_out1} 'Zones.pdf'];
+        fileSaveName2=['31bit_' fileConc{d_out2} '_' num2str(fileDescript(req_i{3})) 'Zones.pdf'];
+        Fig_BoxplotN;
+%         Fig_15bitPerf
     end
 end
